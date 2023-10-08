@@ -18,6 +18,9 @@ import { ProjekSchema } from './schema/projek.schema';
 import { ProfileController } from './profile/profile.controller';
 import { ProfileService } from './profile/profile.service';
 import { ProfileSchema } from './schema/profile.schema';
+import { ObjektifController } from './objektif/objektif.controller';
+import { ObjektifService } from './objektif/objektif.service';
+import { ObjektifSchema } from './schema/objektif.schema';
 
 
 @Module({
@@ -41,9 +44,10 @@ import { ProfileSchema } from './schema/profile.schema';
     MongooseModule.forFeature([{name: 'Divisi', schema: DivisiSchema}]),
     MongooseModule.forFeature([{name: 'Projek', schema: ProjekSchema}]),
     MongooseModule.forFeature([{name: 'Profile', schema: ProfileSchema}]),
+    MongooseModule.forFeature([{name: 'Objektif', schema: ObjektifSchema}]),
   ],
-  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController],
-  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService],
+  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController],
+  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService],
   exports: [JwtStrategy, PassportModule],
 })
 export class AppModule {}

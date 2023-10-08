@@ -37,6 +37,12 @@ export class CreateProfileDto{
     readonly foto: Express.Multer.File;
 
     @IsString()
+    @IsNotEmpty()
+    readonly bio: string;
+
+    readonly sosmed: string[];
+
+    @IsString()
     readonly grade: string;
 
 

@@ -7,12 +7,20 @@ import { ProjekService } from './projek.service';
 export class ProjekController {
     constructor(private readonly projekService: ProjekService){}
 
-    //Create Projek endpoint
+
     @Post()
     @UseGuards(AuthGuard())
-    async createProjek(@Res() Response, @Body() createProjekDto: CreateProjekDto){
+    async createProjek(
+        @Res() Response, 
+        @Body() createProjekDto: CreateProjekDto,
+    ){
         try {
-            const newProjek = await this.projekService.createProjek(createProjekDto);
+            const modifiedDto = {
+                ...createProjekDto,
+                team: createProjekDto.team || []
+            };
+    
+            const newProjek = await this.projekService.createProjek(modifiedDto);
             return Response.status(HttpStatus.CREATED).json({
                 message: "Berhasil menambahkan data projek", 
                 newProjek
@@ -24,6 +32,12 @@ export class ProjekController {
                     message: "Error Project not created",
                     error: 'Projek dengan nama tersebut sudah ada'
                 });
+            } else if (err.message === 'Data team tidak boleh sama') {
+                return Response.status(HttpStatus.BAD_REQUEST).json({
+                    statusCode: 400,
+                    message: "Error projek not created",
+                    error: 'Data team tidak boleh sama'
+                });
             } else {
                 return Response.status(HttpStatus.BAD_REQUEST).json({
                     statusCode: 400,
@@ -33,6 +47,9 @@ export class ProjekController {
             }
         }
     }
+    
+    
+
 
     //Show adll Projek
     @Get()
@@ -47,29 +64,52 @@ export class ProjekController {
         }
     }
 
-    //Update projek endpoint
-    @Put(':id')
-    @UseGuards(AuthGuard())
-    async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProjekDto: CreateProjekDto) {
+    @Get('/:id')
+    async getProjekById(@Param('id') id: string, @Res() Response) {
         try {
-            const updatedProjek = await this.projekService.updateProjek(projekId, updateProjekDto);
+            const projek = await this.projekService.getProjek(id);
 
-            return res.status(HttpStatus.OK).json({
-                message: `Projek dengan ID ${projekId} berhasil diperbarui.`,
-                updatedProjek,
-            });
-        } catch (err) {
-            if (err instanceof NotFoundException) {
-                return res.status(HttpStatus.NOT_FOUND).json({
-                    message: err.message,
-                });
-            } else {
-                return res.status(HttpStatus.BAD_REQUEST).json({
-                    message: 'Gagal memperbarui projek.',
+            if (!projek) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data projek tidak ditemukan'
                 });
             }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data projek berhasil ditemukan',
+                projek
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data projek'
+            });
         }
     }
+
+    //Update projek endpoint
+    @Put(':id')
+@UseGuards(AuthGuard())
+async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProjekDto: CreateProjekDto) {
+    try {
+        const updatedProjek = await this.projekService.updateProjek(projekId, updateProjekDto);
+
+        return res.status(HttpStatus.OK).json({
+            message: `Projek dengan ID ${projekId} berhasil diperbarui.`,
+            updatedProjek,
+        });
+    } catch (err) {
+        if (err instanceof NotFoundException) {
+            return res.status(HttpStatus.NOT_FOUND).json({
+                message: err.message,
+            });
+        } else {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                message: 'Gagal memperbarui projek.',
+            });
+        }
+    }
+}
+
 
     //Delete projek endpoint
     @Delete('/:id')

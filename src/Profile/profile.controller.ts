@@ -60,6 +60,8 @@ async uploadFile(
             notelpon,
             gender,
             tanggal_lahir,
+            bio,
+            sosmed,
             grade
         } = createProfileDto;
 
@@ -76,6 +78,8 @@ async uploadFile(
             gender,
             tanggal_lahir,
             objectName,
+            bio,
+            sosmed,
             grade
         );
 
@@ -122,6 +126,8 @@ async updateUploud(
                 notelpon,
                 gender,
                 tanggal_lahir,
+                bio,
+                sosmed
             } = createProfileDto;
             const file = uploadeddFile.originalname;
 
@@ -137,7 +143,9 @@ async updateUploud(
                 notelpon,
                 gender,
                 tanggal_lahir,
-                namefilee
+                namefilee,
+                bio,
+                sosmed
             );
 
             const stream = require('stream');
@@ -161,7 +169,9 @@ async updateUploud(
                 notelpon,
                 gender,
                 tanggal_lahir,
-             } = createProfileDto;
+                bio,
+                sosmed
+            } = createProfileDto;
 
             const updatedUploud = await this.profileService.updateUploud(
                 uploudData._id, 
@@ -171,7 +181,9 @@ async updateUploud(
                 notelpon,
                 gender,
                 tanggal_lahir,
-                uploudData.foto // Gunakan nama file lama
+                uploudData.foto, // Gunakan nama file lama
+                bio,
+                sosmed
             );
 
             return Response.status(HttpStatus.OK).json({

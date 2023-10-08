@@ -9,5 +9,7 @@ export interface IProfile extends Document{
     readonly gender: string;
     readonly tanggal_lahir: string;
     readonly foto: string;
+    readonly bio: string;
+    readonly sosmed: string[];
     readonly grade: string;
 }

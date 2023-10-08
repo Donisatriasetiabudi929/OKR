@@ -4,5 +4,6 @@ export interface IProjek extends Document{
     readonly deskripsi: string;
     readonly start_date: string;
     readonly end_date: string;
+    readonly team: string[];
     readonly status: string;
 }

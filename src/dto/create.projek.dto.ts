@@ -17,6 +17,10 @@ export class CreateProjekDto{
     @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
     readonly end_date: string;
 
+    @IsString()
+    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    readonly team: string[];
+
     
     readonly status: string;
 

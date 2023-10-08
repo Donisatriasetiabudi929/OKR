@@ -71,6 +71,8 @@ async createUploud(
     gender: string,
     tanggal_lahir: string,
     namaFile: string, 
+    bio: string,
+    sosmed: string[],
     grade: string
 ): Promise<IProfile> {
     const existingProfile = await this.profileModel.findOne({ id_user });
@@ -89,6 +91,8 @@ async createUploud(
         gender,
         tanggal_lahir,
         foto: namaFile,
+        bio,
+        sosmed,
         grade: '0'
     });
 
@@ -140,7 +144,9 @@ async updateUploud(
     notelpon: string,
     gender: string,
     tanggal_lahir: string,
-    namefile: string
+    namefile: string,
+    bio: string,
+    sosmed: string[]
 ): Promise<IProfile> {
     const updatedUploud = await this.profileModel.findByIdAndUpdate(
         uploudId,
@@ -151,7 +157,9 @@ async updateUploud(
             notelpon,
             gender,
             tanggal_lahir,
-            foto: namefile 
+            foto: namefile ,
+            bio,
+            sosmed
         },
         { new: true }
     );

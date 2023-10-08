@@ -10,27 +10,39 @@ export class ProjekService {
 
     //Create Projek
     async createProjek(createProjekDto: CreateProjekDto): Promise<IProjek>{
-        const { nama, deskripsi, start_date, end_date } = createProjekDto;
+        const { nama, deskripsi, start_date, end_date, team } = createProjekDto;
+    
+        // Memeriksa apakah ada nilai yang sama dalam 'team'
+        if (new Set(team).size !== team.length) {
+            throw new Error('Data team tidak boleh sama');
+        }
+    
         const existingProjek = await this.projekModel.findOne({ nama });
         if (existingProjek) {
             throw new Error('Projek dengan nama tersebut sudah ada');
         }
+    
         const newProjek = new this.projekModel({
             nama,
             deskripsi,
             start_date,
             end_date,
-            status: "Soon"
+            team: team || [],  
+            status: "On Progress"
         });
+    
         return newProjek.save(); 
     }
+    
+    
+    
 
     //Update Projek
     async updateProjek(projekId: string, updateProjekDto: CreateProjekDto): Promise<IProjek> {
-        const { nama, deskripsi, start_date, end_date, status } = updateProjekDto;
+        const { nama, deskripsi, start_date, end_date, team,  status } = updateProjekDto;
         const updatedProjek = await this.projekModel.findByIdAndUpdate(
             projekId,
-            { $set: { nama, deskripsi, start_date, end_date, status } },
+            { $set: { nama, deskripsi, start_date, end_date, team, status } },
             { new: true }
         );
         if (!updatedProjek) {
@@ -46,6 +58,14 @@ export class ProjekService {
             throw new NotFoundException('Data projek tidak ada!');
         }
         return projekData;
+    }
+
+    async getProjek(projekId:string):Promise<IProjek>{
+        const existingProjek = await this.projekModel.findById(projekId)
+        if (!existingProjek){
+            throw new NotFoundException(`Projek dengan #${projekId} tidak tersedia`);
+        }
+        return existingProjek;
     }
     
     //Delete Projek

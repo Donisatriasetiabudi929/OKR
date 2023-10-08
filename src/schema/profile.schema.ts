@@ -32,6 +32,12 @@ export class Profile{
     foto: string;
 
     @Prop()//Properti atau untuk menyebutkan fieldnya
+    bio: string;
+
+    @Prop()//Properti atau untuk menyebutkan fieldnya
+    sosmed: string[];
+
+    @Prop()//Properti atau untuk menyebutkan fieldnya
     grade: string;
 
     @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
