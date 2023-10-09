@@ -1,17 +1,44 @@
-// import {Prop,Schema,SchemaFactory} from '@nestjs/mongoose'
-// import mongoose from 'mongoose';
-// import { User } from './user.schema';
+import {Prop,Schema,SchemaFactory} from '@nestjs/mongoose'
+import mongoose from 'mongoose';
+import { User } from './user.schema';
 
-// @Schema()
-// export class Keyresult{
-//     @Prop()
-//     id_projek: string;
+@Schema()
+export class Keyresult{
+    @Prop()
+    id_projek: string;
 
-//     @Prop()
-//     id_objek: string;
+    @Prop()
+    id_objek: string;
 
-//     @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
-//     user: User;
-// }
+    @Prop()
+    nama: string;
 
-// export const KeyresultSchema = SchemaFactory.createForClass(Keyresult)
+    @Prop()
+    file: string;
+
+    @Prop()
+    link: string;
+
+    @Prop()
+    assign_to: string;
+
+    @Prop()
+    nama_profile: string;
+
+    @Prop()
+    foto_profile: string;
+
+    @Prop()
+    target_value: string;
+
+    @Prop()
+    current_value: string;
+
+    @Prop()
+    status: string;
+
+    @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+    user: User;
+}
+
+export const KeyresultSchema = SchemaFactory.createForClass(Keyresult)

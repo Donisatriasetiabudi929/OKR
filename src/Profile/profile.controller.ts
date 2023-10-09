@@ -200,8 +200,6 @@ async updateUploud(
 
 
 
-// ...
-
 @Get('/all')
 @UseGuards(AuthGuard())
     async getUplouds(@Res() Response){
