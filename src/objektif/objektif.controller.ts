@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
 import { ObjektifService } from './objektif.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateObjektifDto } from 'src/dto/create.objektif.dto';
@@ -50,6 +50,40 @@ export class ObjektifController {
             });
         }catch(err){
             return Response.status(err.status).json(err.Response);
+        }
+    }
+
+    @Get()
+    async getProjeks(@Res() Response){
+        try{
+            const objekData = await this.objektifService.getAllObjek();
+            return Response.status(HttpStatus.OK).json({
+                message: 'Semua data objek berhasil ditemukan', objekData
+            });
+        }catch(err){
+            return Response.status(err.status).json(err.Response);
+        }
+    }
+
+    @Get('/:id')
+    async getProjekById(@Param('id') id: string, @Res() Response) {
+        try {
+            const objek = await this.objektifService.getObjek(id);
+
+            if (!objek) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data objektif tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data objektif berhasil ditemukan',
+                objek
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data objektif'
+            });
         }
     }
 

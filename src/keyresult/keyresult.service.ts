@@ -145,7 +145,21 @@ export class KeyresultService {
         return this.keyresultModel.findById(keyresultId).exec();
     }
     
-    
+    async getAllKeyresult():Promise<IKeyresult[]>{
+        const keyresultData = await this.keyresultModel.find()
+        if (!keyresultData || keyresultData.length == 0){
+            throw new NotFoundException('Data Keyresult tidak ada!');
+        }
+        return keyresultData;
+    }
+
+    async getKeyresult(keyresultId:string):Promise<IKeyresult>{
+        const existingKeyresult = await this.keyresultModel.findById(keyresultId)
+        if (!existingKeyresult){
+            throw new NotFoundException(`Projek dengan #${keyresultId} tidak tersedia`);
+        }
+        return existingKeyresult;
+    }
     
 
 }

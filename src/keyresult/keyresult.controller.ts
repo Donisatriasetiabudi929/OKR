@@ -1,9 +1,10 @@
-import { Body, Controller, Param, Post, Put, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Param, Post, Put, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { KeyresultService } from './keyresult.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateKeyresultDto } from 'src/dto/create.keyresult.dto';
 import { randomBytes } from 'crypto';
 import { Readable } from 'stream';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('keyresult')
 export class KeyresultController {
@@ -12,6 +13,7 @@ export class KeyresultController {
         private readonly keyresultService: KeyresultService) {}
 
         @Post()
+        @UseGuards(AuthGuard())
         @UseInterceptors(FileInterceptor('file'))
         async uploadFile(
             @UploadedFile() uploadedFile: Express.Multer.File,
@@ -71,6 +73,7 @@ export class KeyresultController {
         }
 
     @Put('/:id')
+    @UseGuards(AuthGuard())
     @UseInterceptors(FileInterceptor('file'))
     async updateKeyresult(
         @Param('id') keyresultId: string,
@@ -144,6 +147,39 @@ export class KeyresultController {
         }
     }
 
+    @Get()
+    async getProjeks(@Res() Response){
+        try{
+            const keyresultData = await this.keyresultService.getAllKeyresult();
+            return Response.status(HttpStatus.OK).json({
+                message: 'Semua data keyresult berhasil ditemukan', keyresultData
+            });
+        }catch(err){
+            return Response.status(err.status).json(err.Response);
+        }
+    }
+
+    @Get('/:id')
+    async getProjekById(@Param('id') id: string, @Res() Response) {
+        try {
+            const keyresult = await this.keyresultService.getKeyresult(id);
+
+            if (!keyresult) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data keyresult tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data keyresult berhasil ditemukan',
+                keyresult
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data keyresult'
+            });
+        }
+    }
 
         
 }
