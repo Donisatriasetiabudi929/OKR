@@ -2,7 +2,6 @@ import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreateKeyresultDto{
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
     readonly id_projek: string;
 
     @IsString()

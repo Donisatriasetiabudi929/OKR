@@ -10,67 +10,73 @@ import { AuthGuard } from '@nestjs/passport';
 export class KeyresultController {
 
     constructor(
-        private readonly keyresultService: KeyresultService) {}
+        private readonly keyresultService: KeyresultService) { }
 
-        @Post()
-        @UseGuards(AuthGuard())
-        @UseInterceptors(FileInterceptor('file'))
-        async uploadFile(
-            @UploadedFile() uploadedFile: Express.Multer.File,
-            @Body() createKeyresultDto: CreateKeyresultDto,
-        ): Promise<any> {
-            try {
-                if (!uploadedFile) {
-                    return { message: 'Tidak ada file yang diunggah' };
-                }
-    
+    @Post()
+    @UseGuards(AuthGuard())
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadFile(
+        @UploadedFile() uploadedFile: Express.Multer.File,
+        @Body() createKeyresultDto: CreateKeyresultDto,
+    ): Promise<any> {
+        try {
+            let file = '#'; // Default value
+
+            if (uploadedFile) {
                 const uniqueCode = randomBytes(10).toString('hex');
                 const objectName = `${uniqueCode}-${uploadedFile.originalname}`;
-                
+
                 const readableStream = new Readable();
                 readableStream.push(uploadedFile.buffer);
                 readableStream.push(null);
-    
-                const {
-                    id_projek,
-                    id_objek,
-                    nama,
-                    file,
-                    link,
-                    assign_to,
-                    target_value,
-                    current_value,
-                    status
-                } = createKeyresultDto;
-    
+
                 await this.keyresultService.uploadFile('okr.keyresult', objectName, readableStream, uploadedFile.mimetype);
-    
-                const profile = await this.keyresultService.getProfileById(assign_to);
-    
-                if (!profile) {
-                    throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
-                }
-    
-                const newKeyresult = await this.keyresultService.createKeyresult({
-                    id_projek,
-                    id_objek,
-                    nama,
-                    file: objectName,
-                    link,
-                    assign_to,
-                    nama_profile: profile.nama,
-                    foto_profile: profile.foto,
-                    target_value,
-                    current_value,
-                    status
-                });
-    
-                return { message: 'Data berhasil dikirim', newKeyresult };
-            } catch (error) {
-                console.error(`Error saat mengunggah file: ${error}`);
-                throw new Error('Terjadi kesalahan saat mengunggah file');
+
+                file = objectName;
             }
+
+            const {
+                id_objek,
+                nama,
+                link,
+                assign_to,
+                target_value,
+                current_value,
+                status
+            } = createKeyresultDto;
+
+            const profile = await this.keyresultService.getProfileById(assign_to);
+
+            if (!profile) {
+                throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
+            }
+
+            const objektif = await this.keyresultService.getObjekById(id_objek);
+            if (!objektif) {
+                throw new Error(`Objektif dengan ID ${id_objek} tidak ditemukan`)
+            }
+
+            const newKeyresult = await this.keyresultService.createKeyresult({
+                id_projek: objektif.id_projek,
+                id_objek,
+                nama,
+                file,
+                link,
+                assign_to,
+                nama_profile: profile.nama,
+                foto_profile: profile.foto,
+                target_value,
+                current_value,
+                status
+            });
+
+            return { message: 'Data berhasil dikirim', newKeyresult };
+        } catch (error) {
+            console.error(`Error saat mengunggah file: ${error}`);
+            throw new Error('Terjadi kesalahan saat mengunggah file');
         }
+    }
+
 
     @Put('/:id')
     @UseGuards(AuthGuard())
@@ -148,13 +154,13 @@ export class KeyresultController {
     }
 
     @Get()
-    async getProjeks(@Res() Response){
-        try{
+    async getProjeks(@Res() Response) {
+        try {
             const keyresultData = await this.keyresultService.getAllKeyresult();
             return Response.status(HttpStatus.OK).json({
                 message: 'Semua data keyresult berhasil ditemukan', keyresultData
             });
-        }catch(err){
+        } catch (err) {
             return Response.status(err.status).json(err.Response);
         }
     }
@@ -181,5 +187,49 @@ export class KeyresultController {
         }
     }
 
-        
+    @Get('/projek/:id_projek')
+    async getKeyresultsByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {
+        try {
+            const keyresults = await this.keyresultService.getKeyresultsByProjekId(idProjek);
+
+            if (!keyresults) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data keyresult tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data keyresult berhasil ditemukan',
+                keyresults
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data keyresult'
+            });
+        }
+    }
+
+    @Get('/objek/:id_objek')
+    async getKeyresultsByObjekId(@Param('id_objek') idObjek: string, @Res() Response) {
+        try {
+            const keyresults = await this.keyresultService.getKeyresultsByObjekId(idObjek);
+
+            if (!keyresults) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data keyresult tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data keyresult berhasil ditemukan',
+                keyresults
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data keyresult'
+            });
+        }
+    }
+
+
 }

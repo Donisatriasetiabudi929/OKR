@@ -25,6 +25,7 @@ export class ProjekController {
                 message: "Berhasil menambahkan data projek", 
                 newProjek
             });
+
         } catch (err) {
             if (err.message === 'Projek dengan nama tersebut sudah ada') {
                 return Response.status(HttpStatus.BAD_REQUEST).json({
@@ -97,6 +98,7 @@ async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProj
             message: `Projek dengan ID ${projekId} berhasil diperbarui.`,
             updatedProjek,
         });
+        await this.projekService.updateCache();
     } catch (err) {
         if (err instanceof NotFoundException) {
             return res.status(HttpStatus.NOT_FOUND).json({
@@ -121,6 +123,8 @@ async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProj
                 message: 'Berhasil hapus data Divisi',
                 deletedProjek,
             });
+            await this.projekService.updateCache();
+            await this.projekService.deleteCache(`002:${deletedProjek.id}`);
         }catch(err){
             return Response.status(err.status).json(err.Response)
         }

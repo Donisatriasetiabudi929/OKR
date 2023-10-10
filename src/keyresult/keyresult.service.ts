@@ -9,6 +9,7 @@ import * as Minio from 'minio';
 import { ConfigService } from '@nestjs/config';
 import { Readable } from 'stream';
 import { randomBytes } from 'crypto';
+import { IObjektif } from 'src/interface/objektif.interface';
 
 
 @Injectable()
@@ -16,8 +17,9 @@ export class KeyresultService {
     private readonly Redisclient: Redis;
     private minioClient: Minio.Client;
     constructor(private configService: ConfigService, @InjectModel('Keyresult') private keyresultModel: Model<IKeyresult>,
-    @InjectModel('Profile') private readonly profileModel: Model<IProfile>,
-    ){
+        @InjectModel('Profile') private readonly profileModel: Model<IProfile>,
+        @InjectModel('Objektif') private readonly objektifModel: Model<IObjektif>,
+    ) {
         //Untuk menghubungkan redis server
         this.Redisclient = new Redis({
             port: 6379,
@@ -40,11 +42,11 @@ export class KeyresultService {
 
     async uploadFile(bucketName: string, objectName: string, stream: Readable, contentType: string): Promise<void> {
         const objectExists = await this.checkObjectExists(bucketName, objectName);
-    
+
         if (objectExists) {
             throw new Error(`File dengan nama ${objectName} sudah ada di storage`);
         }
-    
+
         await this.minioClient.putObject(bucketName, objectName, stream, null, {
             'Content-Type': contentType,
         });
@@ -63,6 +65,9 @@ export class KeyresultService {
 
     async getProfileById(id: string): Promise<IProfile | null> {
         return this.profileModel.findById(id).exec();
+    }
+    async getObjekById(idObjek: string): Promise<IObjektif | null> {
+        return this.objektifModel.findById(idObjek).exec();
     }
 
     async deleteFile(bucketName: string, objectName: string): Promise<void> {
@@ -98,15 +103,20 @@ export class KeyresultService {
             status: "Progress"
         });
 
-        return newKeyresult.save(); 
+        await this.deleteCache(`004`);
+        await this.deleteCache(`004:${newKeyresult.id}`);
+        await this.deleteCache(`004:projek:${newKeyresult.id_projek}`);
+        await this.deleteCache(`004:objek:${newKeyresult.id_objek}`);
+
+        return newKeyresult.save();
     }
 
     async updateKeyresult(
         keyresultId: string,
-        id_projek: string, 
-        id_objek: string, 
-        nama: string, 
-        filee: string, 
+        id_projek: string,
+        id_objek: string,
+        nama: string,
+        filee: string,
         link: string,
         assign_to: string,
         nama_profile: string,
@@ -117,8 +127,8 @@ export class KeyresultService {
     ): Promise<IKeyresult> {
         const updatedUploud = await this.keyresultModel.findByIdAndUpdate(
             keyresultId,
-            { 
-                id_projek, 
+            {
+                id_projek,
                 id_objek,
                 nama,
                 file: filee || undefined,  // Set to undefined if filee is falsy
@@ -132,34 +142,108 @@ export class KeyresultService {
             },
             { new: true }
         );
-    
+
         if (!updatedUploud) {
             throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak ditemukan`);
         }
-    
+        await this.deleteCache(`004`);
+        await this.deleteCache(`004:${updatedUploud.id}`);
+        await this.deleteCache(`004:projek:${updatedUploud.id_projek}`);
+        await this.deleteCache(`004:objek:${updatedUploud.id_objek}`);
         return updatedUploud;
     }
-    
+
 
     async getKeyresultById(keyresultId: string): Promise<IKeyresult | null> {
         return this.keyresultModel.findById(keyresultId).exec();
     }
-    
-    async getAllKeyresult():Promise<IKeyresult[]>{
-        const keyresultData = await this.keyresultModel.find()
-        if (!keyresultData || keyresultData.length == 0){
-            throw new NotFoundException('Data Keyresult tidak ada!');
+
+    async getAllKeyresult(): Promise<IKeyresult[]> {
+        const cachedData = await this.Redisclient.get('004');
+
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        } else {
+            const keyresultData = await this.keyresultModel.find()
+            if (!keyresultData || keyresultData.length == 0) {
+                throw new NotFoundException('Data Keyresult tidak ada!');
+            }
+            await this.Redisclient.setex('004', 3600, JSON.stringify(keyresultData));
+            return keyresultData;
         }
-        return keyresultData;
     }
 
-    async getKeyresult(keyresultId:string):Promise<IKeyresult>{
-        const existingKeyresult = await this.keyresultModel.findById(keyresultId)
-        if (!existingKeyresult){
-            throw new NotFoundException(`Projek dengan #${keyresultId} tidak tersedia`);
+    async getKeyresult(keyresultId: string): Promise<IKeyresult> {
+        const cacheKey = `004:${keyresultId}`;
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            // Jika data tersedia di cache, parse data JSON dan kembalikan
+            return JSON.parse(cachedData);
+        } else {
+            const existingKeyresult = await this.keyresultModel.findById(keyresultId)
+            if (!existingKeyresult) {
+                throw new NotFoundException(`Projek dengan #${keyresultId} tidak tersedia`);
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingKeyresult)); 
+            return existingKeyresult;
         }
-        return existingKeyresult;
     }
-    
+
+    async getKeyresultsByProjekId(idProjek: string): Promise<IKeyresult[]> {
+        const cacheKey = `004:projek:${idProjek}`;
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            // Jika data tersedia di cache, parse data JSON dan kembalikan
+            return JSON.parse(cachedData);
+        } else {
+            const keyresults = await this.keyresultModel.find({ id_projek: idProjek });
+            if (!keyresults || keyresults.length === 0) {
+                throw new NotFoundException(`Data keyresult dengan id_projek #${idProjek} tidak ditemukan`);
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(keyresults));
+            return keyresults;
+        }
+
+    }
+
+    async getKeyresultsByObjekId(idObjektif: string): Promise<IKeyresult[]> {
+        const cacheKey = `004:objek:${idObjektif}`;
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            // Jika data tersedia di cache, parse data JSON dan kembalikan
+            return JSON.parse(cachedData);
+        } else {
+            const keyresults = await this.keyresultModel.find({ id_objek: idObjektif });
+            if (!keyresults || keyresults.length === 0) {
+                throw new NotFoundException(`Data keyresult dengan id_objek #${idObjektif} tidak ditemukan`);
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(keyresults));
+            return keyresults;
+        }
+    }
+
+    async updateCache(): Promise<void> {
+        try {
+            const uploudData = await this.objektifModel.find();
+            if (!uploudData || uploudData.length === 0) {
+                throw new NotFoundException('Data uploud tidak ada!');
+            }
+            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
+            await this.Redisclient.setex('004', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            console.log('Cache Redis (key 004) telah diperbarui dengan data terbaru dari MongoDB');
+        } catch (error) {
+            console.error(`Error saat memperbarui cache Redis (key 004): ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui cache Redis');
+        }
+    }
+    async deleteCache(key: string): Promise<void> {
+        try {
+            await this.Redisclient.del(key);
+            console.log(`Cache dengan key ${key} telah dihapus dari Redis`);
+        } catch (error) {
+            console.error(`Error saat menghapus cache dari Redis: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
+        }
+    }
 
 }

@@ -7,7 +7,7 @@ import { Response } from 'express';
 
 @Controller('objektif')
 export class ObjektifController {
-    constructor(private readonly objektifService: ObjektifService) {}
+    constructor(private readonly objektifService: ObjektifService) { }
 
     @Post()
     @UseGuards(AuthGuard())
@@ -15,7 +15,7 @@ export class ObjektifController {
         try {
             const newObjektif = await this.objektifService.createObjektif(createObjektifDto);
             return res.status(HttpStatus.CREATED).json({
-                message: "Berhasil menambahkan data objektif", 
+                message: "Berhasil menambahkan data objektif",
                 newObjektif
             });
         } catch (err) {
@@ -39,28 +39,28 @@ export class ObjektifController {
     //Untuk memanggil keamanan authorisasi auth
     @UseGuards(AuthGuard())
     async updateStudent(@Res() Response, @Param('id') objektifId: string,
-    @Body() createObjektifDto: CreateObjektifDto){
+        @Body() createObjektifDto: CreateObjektifDto) {
         //req Req untuk mengakses dan manipulasi informasi yang dikirimkan
-        try{
+        try {
             //Untuk menampilkan data user di console
             const existingObjektif = await this.objektifService.updateObjektif(objektifId, createObjektifDto);
             return Response.status(HttpStatus.OK).json({
                 message: 'Objektif berhasil di update',
                 existingObjektif
             });
-        }catch(err){
+        } catch (err) {
             return Response.status(err.status).json(err.Response);
         }
     }
 
     @Get()
-    async getProjeks(@Res() Response){
-        try{
+    async getProjeks(@Res() Response) {
+        try {
             const objekData = await this.objektifService.getAllObjek();
             return Response.status(HttpStatus.OK).json({
                 message: 'Semua data objek berhasil ditemukan', objekData
             });
-        }catch(err){
+        } catch (err) {
             return Response.status(err.status).json(err.Response);
         }
     }
@@ -86,5 +86,28 @@ export class ObjektifController {
             });
         }
     }
+
+    @Get('/projek/:id_projek')
+    async getKeyresultsByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {
+        try {
+            const objektif = await this.objektifService.getObjekByProjekId(idProjek);
+
+            if (!objektif) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data objektif tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data objektif berhasil ditemukan',
+                objektif
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data objektif'
+            });
+        }
+    }
+
 
 }

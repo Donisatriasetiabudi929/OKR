@@ -3,49 +3,124 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateObjektifDto } from 'src/dto/create.objektif.dto';
 import { IObjektif } from 'src/interface/objektif.interface';
+import { Redis } from 'ioredis';
+
 
 @Injectable()
 export class ObjektifService {
-    constructor(@InjectModel('Objektif') private objektifModel: Model<IObjektif>){}
+    private readonly Redisclient: Redis;
 
-    async createObjektif(createObjektifDto: CreateObjektifDto): Promise<IObjektif>{
+    constructor(@InjectModel('Objektif') private objektifModel: Model<IObjektif>) {
+        this.Redisclient = new Redis({
+            port: 6379,
+            host: '127.0.0.1',
+            password: '',
+            username: '',
+            //Optional
+            db: 1
+        });
+    }
+
+    async createObjektif(createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
         const { id_projek, nama } = createObjektifDto;
         const existingObjektif = await this.objektifModel.findOne({ nama });
         if (existingObjektif) {
             throw new Error('Objektif dengan nama tersebut sudah ada');
         }
-    
+
         const newObjektif = new this.objektifModel({
             id_projek,
             nama,
             status: "Progress"
         });
-    
-        return newObjektif.save(); 
+        await this.deleteCache(`003`);
+        await this.deleteCache(`003:${newObjektif.id}`);
+        await this.deleteCache(`003:projek:${newObjektif.id_projek}`);
+
+        return newObjektif.save();
     }
 
 
-    async updateObjektif(objektifId: string, createObjektifDto: CreateObjektifDto):Promise<IObjektif>{
-        const existingObjektif = await this.objektifModel.findByIdAndUpdate(objektifId, createObjektifDto, {new: true});
+    async updateObjektif(objektifId: string, createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
+        const existingObjektif = await this.objektifModel.findByIdAndUpdate(objektifId, createObjektifDto, { new: true });
         if (!existingObjektif) {
             throw new NotFoundException(`Siswa #${objektifId} tidak tersedia!`);
         }
+        await this.deleteCache(`003`);
+        await this.deleteCache(`003:${existingObjektif.id}`);
+        await this.deleteCache(`003:projek:${existingObjektif.id_projek}`);
         return existingObjektif;
     }
 
-    async getAllObjek():Promise<IObjektif[]>{
-        const objekData = await this.objektifModel.find()
-        if (!objekData || objekData.length == 0){
-            throw new NotFoundException('Data objek tidak ada!');
+    async getAllObjek(): Promise<IObjektif[]> {
+        const cachedData = await this.Redisclient.get('003');
+
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        } else {
+            const objekData = await this.objektifModel.find()
+            if (!objekData || objekData.length == 0) {
+                throw new NotFoundException('Data objek tidak ada!');
+            }
+            await this.Redisclient.setex('003', 3600, JSON.stringify(objekData));
+            return objekData;
         }
-        return objekData;
     }
 
-    async getObjek(objekId:string):Promise<IObjektif>{
-        const existingObjek = await this.objektifModel.findById(objekId)
-        if (!existingObjek){
-            throw new NotFoundException(`Projek dengan #${objekId} tidak tersedia`);
+    async getObjek(objekId: string): Promise<IObjektif> {
+        const cacheKey = `003:${objekId}`;
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            // Jika data tersedia di cache, parse data JSON dan kembalikan
+            return JSON.parse(cachedData);
+        } else {
+            const existingObjek = await this.objektifModel.findById(objekId)
+            if (!existingObjek) {
+                throw new NotFoundException(`Projek dengan #${objekId} tidak tersedia`);
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingObjek));
+            return existingObjek;
         }
-        return existingObjek;
     }
+
+    async getObjekByProjekId(idProjek: string): Promise<IObjektif[]> {
+        const cacheKey = `003:projek:${idProjek}`;
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            // Jika data tersedia di cache, parse data JSON dan kembalikan
+            return JSON.parse(cachedData);
+        } else {
+            const objektif = await this.objektifModel.find({ id_projek: idProjek });
+            if (!objektif || objektif.length === 0) {
+                throw new NotFoundException(`Data objektif dengan id_projek #${idProjek} tidak ditemukan`);
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(objektif));
+            return objektif;
+        }
+    }
+
+    async updateCache(): Promise<void> {
+        try {
+            const uploudData = await this.objektifModel.find();
+            if (!uploudData || uploudData.length === 0) {
+                throw new NotFoundException('Data uploud tidak ada!');
+            }
+            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
+            await this.Redisclient.setex('003', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            console.log('Cache Redis (key 003) telah diperbarui dengan data terbaru dari MongoDB');
+        } catch (error) {
+            console.error(`Error saat memperbarui cache Redis (key 003): ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui cache Redis');
+        }
+    }
+    async deleteCache(key: string): Promise<void> {
+        try {
+            await this.Redisclient.del(key);
+            console.log(`Cache dengan key ${key} telah dihapus dari Redis`);
+        } catch (error) {
+            console.error(`Error saat menghapus cache dari Redis: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
+        }
+    }
+
 }
