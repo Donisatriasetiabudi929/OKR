@@ -37,7 +37,7 @@ export class ProfileController {
 
             const token = authHeader.split(' ')[1];
 
-            const { id_user, role } = await this.authService.getUserFromToken(token);
+            const { id_user } = await this.authService.getUserFromToken(token);
 
             if (!id_user) {
                 return { message: 'id_auth tidak valid' };
@@ -49,7 +49,7 @@ export class ProfileController {
             //     return { message: `Profil dengan email ${email} sudah ada` };
             // }
 
-            console.log(`id_auth: ${id_user}, role: ${role}`);
+            console.log(`id_auth: ${id_user}`);
 
             const uniqueCode = randomBytes(5).toString('hex');
             const objectName = `${uniqueCode}-${uploadedFile.originalname}`;
@@ -71,7 +71,6 @@ export class ProfileController {
             await this.profileService.createUploud(
                 id_user,
                 email,
-                role,
                 nama,
                 divisi,
                 notelpon,
@@ -172,6 +171,7 @@ export class ProfileController {
                     message: 'Profil berhasil diperbarui (tanpa perubahan gambar)',
                     updatedUploud
                 });
+                await this.profileService.updateRelatedDataByprofileId(uploudId, updatedUploud);
             }
         } catch (err) {
             return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -221,21 +221,7 @@ export class ProfileController {
         }
     }
 
-    @Put('/role/:id')
-    @UseGuards(AuthGuard())
-    async updateRole(@Res() Response, @Param('id') profileId: string, @Body() createProfileDto: CreateProfileDto, @Req() Req) {
-        try {
-            const existingProfile = await this.profileService.updateRole(profileId, createProfileDto.role);
-            return Response.status(HttpStatus.OK).json({
-                message: 'Berhasil update role',
-                existingProfile,
-            });
-            await this.profileService.updateCache();
-        } catch (err) {
-            console.error(`Error saat memperbarui role: ${err}`);
-            throw new Error('Terjadi kesalahan saat memperbarui role');
-        }
-    }
+
 
     @Delete('/:id')
     @UseGuards(AuthGuard())
@@ -263,5 +249,54 @@ export class ProfileController {
             });
         }
     }
+
+    @Get('/profile/:id')
+    async getProfileById(@Param('id') id: string, @Res() Response) {
+        try {
+            const profile = await this.profileService.getProfileById(id);
+
+            if (!profile) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data profile tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data profile berhasil ditemukan',
+                profile
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data profile'
+            });
+        }
+    }
+
+
+    @Get('/profile/divisi/:divisiId')
+async getProfilesByDivisiId(@Param('divisiId') divisiId: string, @Res() Response) {
+    try {
+    
+        const profiles = await this.profileService.getProfilesByDivisiId(divisiId);
+
+        if (!profiles) {
+            return Response.status(HttpStatus.NOT_FOUND).json({
+                message: `Tidak ada profil dengan divisi ID ${divisiId}`
+            });
+        }
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Data profil dengan divisi ID ${divisiId} berhasil ditemukan`,
+            profiles
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil data profile'
+        });
+    }
+}
+
+
+
 
 }

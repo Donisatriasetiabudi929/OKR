@@ -8,15 +8,29 @@ import { SignUpDto } from 'src/dto/signup.dto';
 import { LoginDto } from 'src/dto/login.dto';
 import { UpdateUserDto } from 'src/dto/update-user.dto';
 import { IUser } from 'src/interface/user.interface';
+import { Redis } from 'ioredis';
+import { IProfile } from 'src/interface/profile.interface';
+
 
 @Injectable()
 export class AuthService {
+    private readonly Redisclient: Redis;
     //Untuk menyuntikkan model pengguna serta layanan JWT
     constructor(
         @InjectModel(User.name)
         private userModel: Model<User>,
         private jwtService: JwtService,
-    ){}
+        @InjectModel('Profile') private profileModel: Model<IProfile>, 
+    ){
+        this.Redisclient = new Redis({
+            port: 6379,
+            host: '127.0.0.1',
+            password: '',
+            username: '',
+            //Optional
+            db: 1
+        });
+    }
 
     async getUser(userId:string):Promise<IUser>{
         const existingUser = await this.userModel.findById(userId)
@@ -25,6 +39,56 @@ export class AuthService {
         }
         return existingUser;
     }
+
+    async updateCache(): Promise<void> {
+        try {
+            const uploudData = await this.profileModel.find();
+            if (!uploudData || uploudData.length === 0) {
+                throw new NotFoundException('Data uploud tidak ada!');
+            }
+            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
+            await this.Redisclient.setex('001', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            console.log('Cache Redis (key 001) telah diperbarui dengan data terbaru dari MongoDB');
+        } catch (error) {
+            console.error(`Error saat memperbarui cache Redis (key 001): ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui cache Redis');
+        }
+    }
+    async deleteCache(key: string): Promise<void> {
+        try {
+            await this.Redisclient.del(key);
+            console.log(`Cache dengan key ${key} telah dihapus dari Redis`);
+        } catch (error) {
+            console.error(`Error saat menghapus cache dari Redis: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
+        }
+    }
+    async updateRole(userId: string, role: string): Promise<IUser> {
+        const existingUser = await this.userModel.findById(userId);
+    
+        if (!existingUser) {
+            throw new NotFoundException(`User #${userId} tidak tersedia!`);
+        }
+    
+        // Update the user's role
+        existingUser.role = role;
+        await existingUser.save();
+    
+        // Find the associated profile and update its role
+        const existingProfile = await this.profileModel.findOne({ id_user: userId });
+    
+        if (!existingProfile) {
+            throw new NotFoundException(`Profil dengan ID pengguna ${userId} tidak ditemukan!`);
+        }
+    
+        // Since 'role' is read-only in Profile, you may need to adjust your data model
+        // or come up with an alternative approach for managing roles.
+        // If you can update 'role' in Profile, do it here
+    
+        return existingUser;
+    }
+    
+    
 
     //Untuk melakukan proses signup
     async signUp(signUpDto: SignUpDto): Promise<{ token: string }> {

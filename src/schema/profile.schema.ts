@@ -10,9 +10,6 @@ export class Profile{
     @Prop()//Properti atau untuk menyebutkan fieldnya
     email: string;
 
-    @Prop()
-    role: string;
-
     @Prop()//Properti atau untuk menyebutkan fieldnya
     nama: string;
 

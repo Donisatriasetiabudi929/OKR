@@ -9,6 +9,6 @@ export interface IKeyresult extends Document{
     readonly nama_profile: string;
     readonly foto_profile: string;
     readonly target_value: string;
-    readonly current_value: string;
+    current_value: number;
     readonly status: string;
 }

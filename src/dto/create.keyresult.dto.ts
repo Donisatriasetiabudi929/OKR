@@ -31,7 +31,7 @@ export class CreateKeyresultDto{
     readonly target_value: string;
 
     @IsNumber()
-    readonly current_value: string;
+    readonly current_value: number;
 
     readonly status: string;
 

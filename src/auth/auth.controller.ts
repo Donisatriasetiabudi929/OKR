@@ -17,23 +17,21 @@ export class AuthController {
     }
 
 
-    //Untuk mengedit role user
-    //Untuk menangani permintaan HTTP PUT
-    @Put('/:id')
-    //Untuk memvalidasi keamanan authorization
-    @UseGuards(AuthGuard())
-    async updateUser(@Res() Response, @Param('id') userId: string, @Body() updateUserDto: UpdateUserDto, @Req() Req){
-        try{
-            const existingUser = await this.authService.updateUser(userId, updateUserDto);
-            return Response.status(HttpStatus.OK).json({
-                message: 'Berhasil update role',
-                existingUser,
-                user: Req.user //Untuk menampilkan siapa user yang mengedit
-            });
-        }catch(err){
-            return Response.status(err.status).json(err.Response);
-        }
+    @Put('/role/:id')
+@UseGuards(AuthGuard())
+async updateRole(@Res() Response, @Param('id') profileId: string, @Body() updateUserDto: UpdateUserDto, @Req() Req) {
+    try {
+        const existingProfile = await this.authService.updateRole(profileId, updateUserDto.role);
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil update role',
+            existingProfile,
+        });
+    } catch (err) {
+        console.error(`Error saat memperbarui role: ${err}`);
+        throw new Error('Terjadi kesalahan saat memperbarui role');
     }
+}
+
 
     //Untuk menangani permintaan HTTP GET
     @Post('/login')

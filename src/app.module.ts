@@ -24,6 +24,9 @@ import { ObjektifSchema } from './schema/objektif.schema';
 import { KeyresultController } from './keyresult/keyresult.controller';
 import { KeyresultService } from './keyresult/keyresult.service';
 import { KeyresultSchema } from './schema/keyresult.schema';
+import { ProgresController } from './progres/progres.controller';
+import { ProgresService } from './progres/progres.service';
+import { ProgresSchema } from './schema/progres.schema';
 
 
 @Module({
@@ -49,9 +52,10 @@ import { KeyresultSchema } from './schema/keyresult.schema';
     MongooseModule.forFeature([{name: 'Profile', schema: ProfileSchema}]),
     MongooseModule.forFeature([{name: 'Objektif', schema: ObjektifSchema}]),
     MongooseModule.forFeature([{name: 'Keyresult', schema: KeyresultSchema}]),
+    MongooseModule.forFeature([{name: 'Progres', schema: ProgresSchema}]),
   ],
-  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController, KeyresultController],
-  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService],
+  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController, KeyresultController, ProgresController],
+  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService, ProgresService],
   exports: [JwtStrategy, PassportModule],
 })
 export class AppModule {}

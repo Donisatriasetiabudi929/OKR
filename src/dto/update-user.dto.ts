@@ -5,6 +5,8 @@ import { User } from "src/schema/user.schema";
 
 export class UpdateUserDto extends PartialType(SignUpDto){
 
+    readonly role:string;
+
     @IsEmpty({ message: "You cannot pass user id" })
     readonly user: User;
 

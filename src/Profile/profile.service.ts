@@ -4,7 +4,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Redis } from 'ioredis';
 import * as Minio from 'minio';
 import { Model } from 'mongoose';
+import { IDivisi } from 'src/interface/divisi.interface';
+import { IKeyresult } from 'src/interface/keyresult.interface';
 import { IProfile } from 'src/interface/profile.interface';
+import { IProgres } from 'src/interface/progres.interface';
 import { User } from 'src/schema/user.schema';
 import { Readable } from 'stream';
 
@@ -14,7 +17,13 @@ export class ProfileService {
     private minioClient: Minio.Client;
     AuthService: any;
 
-    constructor(private configService: ConfigService, @InjectModel('Profile') private profileModel: Model<IProfile>, @InjectModel('User') private userModel: Model<User>) {
+    constructor(private configService: ConfigService, 
+        @InjectModel('Profile') private profileModel: Model<IProfile>, 
+        @InjectModel('User') private userModel: Model<User>,
+        @InjectModel('Progres') private progresModel: Model<IProgres>,
+        @InjectModel('Keyresult') private readonly keyresultModel: Model<IKeyresult>,
+        @InjectModel('Divisi') private readonly divisiModel: Model<IDivisi>
+        ) {
         //Untuk menghubungkan redis server
         this.Redisclient = new Redis({
             port: 6379,
@@ -64,7 +73,6 @@ export class ProfileService {
     async createUploud(
         id_user: string,
         email: string,
-        role: string,
         nama: string,
         divisi: string,
         notelpon: string,
@@ -84,7 +92,6 @@ export class ProfileService {
         const newUploud = await new this.profileModel({
             id_user,
             email,
-            role,
             nama,
             divisi,
             notelpon,
@@ -118,16 +125,9 @@ export class ProfileService {
 
 
     async getProfileByIdAuth(id_user: string): Promise<IProfile> {
-        const cacheKey = `001:${id_user}`;
-        const cachedData = await this.Redisclient.get(cacheKey);
-        if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
-            return JSON.parse(cachedData);
-        } else {
+        
             const tampil = await this.profileModel.findOne({ id_user }).exec();
-            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(tampil)); 
             return tampil;
-        }
     }
 
     async deleteCache(key: string): Promise<void> {
@@ -153,7 +153,33 @@ export class ProfileService {
         return uploudData;
     }
 
-    // ...
+    async updateRelatedDataByprofileId(profileId: string, updateProfile: IProfile): Promise<void> {
+        try {
+            // Update 'keyresult' table
+            const keyresultData = await this.keyresultModel.updateMany(
+                { assign_to: profileId },
+                { $set: { 
+                    nama_profile: updateProfile.nama, 
+                    foto_profile: updateProfile.foto
+                } }
+            );
+    
+            // Update 'Progres' table
+            const cartData = await this.progresModel.updateMany(
+                { id_profile: profileId },
+                { $set: { 
+                    nama_profile: updateProfile.nama, 
+                    foto_profile: updateProfile.foto
+    
+                } }
+            );
+    
+            console.log(`Updated related data in 'suka' and 'cart' tables for produk with ID ${profileId}`);
+        } catch (error) {
+            console.error(`Error updating related data: ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui data terkait');
+        }
+    }
 
     async updateUploud(
         uploudId: string,
@@ -187,6 +213,8 @@ export class ProfileService {
             throw new NotFoundException(`Profil dengan ID ${uploudId} tidak ditemukan`);
         }
 
+        await this.updateRelatedDataByprofileId(uploudId, updatedUploud);
+
         // Perbarui cache untuk data profil
         await this.updateCache();
         await this.deleteCache(`001:${updatedUploud.id_user}`);
@@ -208,26 +236,7 @@ export class ProfileService {
         }
     }
 
-    async updateRole(profileId: string, role: string): Promise<IProfile> {
-        const existingProfile = await this.profileModel.findByIdAndUpdate(profileId, { role }, { new: true });
-        if (!existingProfile) {
-            throw new NotFoundException(`User #${profileId} tidak tersedia!`);
-        }
-
-        const updatedUser = await this.userModel.findByIdAndUpdate(
-            existingProfile.id_user,
-            { role },
-            { new: true }
-        );
-
-        if (!updatedUser) {
-            throw new NotFoundException(`Pengguna dengan ID ${existingProfile.id_user} tidak ditemukan`);
-        }
-
-        await this.updateCache(); // Pastikan Anda memiliki metode ini di service Anda
-
-        return existingProfile;
-    }
+    
 
     async deleteProfile(profileId: string): Promise<IProfile> {
         const deletedProfile = await this.profileModel.findByIdAndDelete(profileId);
@@ -253,6 +262,39 @@ export class ProfileService {
             return profileDataa;
         }
     }
+
+    async getProfileById(profileId:string):Promise<IProfile>{
+        const existingProfile = await this.profileModel.findById(profileId)
+        if (!existingProfile){
+            throw new NotFoundException(`Profile dengan #${profileId} tidak tersedia`);
+        }
+        return existingProfile;
+    }
+
+    async getProfilesByDivisiId(divisiId: string): Promise<IProfile[]> {
+        const divisi = await this.divisiModel.findById(divisiId);
+    
+        if (!divisi) {
+            throw new NotFoundException(`Tidak ada divisi dengan ID ${divisiId}`);
+        }
+    
+        const profiles = await this.profileModel.find({ divisi: divisi.nama });
+    
+        if (!profiles || profiles.length === 0) {
+            throw new NotFoundException(`Tidak ada profil dengan divisi ID ${divisiId}`);
+        }
+    
+        return profiles;
+    }
+
+    async getdivisibyid(id: string): Promise<IDivisi> {
+        
+        const divisi = await this.divisiModel.findById({ id }).exec();
+        return divisi;
+}
+    
+    
+    
 
 
 }

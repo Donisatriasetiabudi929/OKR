@@ -32,7 +32,7 @@ export class Keyresult{
     target_value: string;
 
     @Prop()
-    current_value: string;
+    current_value: number;
 
     @Prop()
     status: string;

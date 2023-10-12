@@ -99,7 +99,7 @@ export class KeyresultService {
             nama_profile,
             foto_profile,
             target_value,
-            current_value: "0",
+            current_value: 0,
             status: "Progress"
         });
 
@@ -122,7 +122,7 @@ export class KeyresultService {
         nama_profile: string,
         foto_profile: string,
         target_value: string,
-        current_value: string,
+        current_value: number,
         status
     ): Promise<IKeyresult> {
         const updatedUploud = await this.keyresultModel.findByIdAndUpdate(
