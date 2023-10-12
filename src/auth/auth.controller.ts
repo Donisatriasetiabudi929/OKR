@@ -32,6 +32,18 @@ async updateRole(@Res() Response, @Param('id') profileId: string, @Body() update
     }
 }
 
+@Get('/all')
+    async getUplouds(@Res() Response) {
+        try {
+            const userData = await this.authService.getAllUser();
+            return Response.status(HttpStatus.OK).json({
+                message: 'Semua data user berhasil di temukan', userData
+            });
+        } catch (err) {
+            return Response.status(err.status).json(err.Response);
+        }
+    }
+
 
     //Untuk menangani permintaan HTTP GET
     @Post('/login')

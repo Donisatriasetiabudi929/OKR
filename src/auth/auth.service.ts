@@ -40,6 +40,21 @@ export class AuthService {
         return existingUser;
     }
 
+    async getAllUser():Promise<IUser[]>{
+        const cachedData = await this.Redisclient.get('005');
+
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        } else {
+            const userData = await this.userModel.find()
+            if (!userData || userData.length == 0){
+                throw new NotFoundException('Data user tidak ada!');
+            }
+            await this.Redisclient.setex('005', 3600, JSON.stringify(userData));
+            return userData;
+        }
+    }
+
     async updateCache(): Promise<void> {
         try {
             const uploudData = await this.profileModel.find();
