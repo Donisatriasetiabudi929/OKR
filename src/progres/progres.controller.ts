@@ -1,10 +1,11 @@
-import { Body, Controller, Post, UploadedFile, UseInterceptors, Headers, Put, Param } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseInterceptors, Headers, Put, Param, UseGuards, Res, Get, HttpStatus } from '@nestjs/common';
 import { ProgresService } from './progres.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateProgresDto } from 'src/dto/create.progres.dto';
 import { randomBytes } from 'crypto';
 import { Readable } from 'stream';
 import { AuthService } from 'src/auth/auth.service';
+import { AuthGuard } from '@nestjs/passport';
 
 
 @Controller('progres')
@@ -13,7 +14,7 @@ export class ProgresController {
         private readonly progresService: ProgresService, private readonly authService: AuthService) { }
 
     
-@Post()
+        @Post()
 @UseInterceptors(FileInterceptor('file'))
 async uploadFile(
     @Headers() headers: Record<string, string>,
@@ -50,7 +51,6 @@ async uploadFile(
             status
         } = createProgresDto;
 
-        // Dapatkan id_user dari token
         const { id_user } = await this.authService.getUserFromToken(token);
 
         if (!id_user) {
@@ -73,34 +73,69 @@ async uploadFile(
             throw new Error(`Keyresult dengan ID ${id_keyresult} tidak ditemukan`)
         }
 
-        // Periksa apakah profile.id dari token sama dengan assign_to di tabel key result
         if (keyresult.assign_to !== profile.id) {
-            return { message: "Key result ini bukan untuk anda! Silahkan kerjakan key result yang sesuai..." }; // Mengembalikan pesan sesuai dengan kondisi
+            return { message: "Key result ini bukan untuk anda! Silahkan kerjakan key result yang sesuai..." };
         }
 
-        const newProgres = await this.progresService.createProgres({
-            id_projek: keyresult.id_projek,
-            id_objek: keyresult.id_objek,
-            id_keyresult,
-            id_profile: profile.id,
-            nama_profile: dataprofile.nama,
-            foto_profile: dataprofile.foto,
-            tanggal,
-            nama,
-            total,
-            file,
-            link,
-            status,
-        });
+        const pendingProgres = await this.progresService.getPendingProgresByStatusAndKeyresult(id_keyresult);
 
-        return { message: 'Data berhasil dikirim', newProgres };
+        const totalPending = pendingProgres.reduce((acc, progres) => {
+            return acc + progres.total;
+        }, 0);
+
+        const newTotal = Number(total) + Number(totalPending) + Number(keyresult.current_value);
+
+        if (newTotal > parseInt(keyresult.target_value)) {
+            return { message: "Total melebihi nilai target value karena masih terdapat data progres yang pending" };
+        } else {
+            const newProgres = await this.progresService.createProgres({
+                id_projek: keyresult.id_projek,
+                id_objek: keyresult.id_objek,
+                id_keyresult,
+                id_profile: profile.id,
+                nama_profile: dataprofile.nama,
+                foto_profile: dataprofile.foto,
+                tanggal,
+                nama,
+                total,
+                file,
+                link,
+                status,
+            });
+
+            return { message: 'Data berhasil dikirim', newProgres };
+        }
     } catch (error) {
         console.error(`Error saat mengunggah file: ${error}`);
         throw new Error('Terjadi kesalahan saat mengunggah file');
     }
 }
 
+@Get('/:id')
+async getUserById(@Param('id') id: string, @Res() Response) {
+    try {
+        const user = await this.authService.getUser(id);
+
+        if (!user) {
+            return Response.status(HttpStatus.NOT_FOUND).json({
+                message: 'Data user tidak ditemukan'
+            });
+        }
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Data user berhasil ditemukan',
+            user
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil data user'
+        });
+    }
+}
+
+
 @Put('/:id_progres/approve')
+@UseGuards(AuthGuard())
 async approveProgres(
     @Param('id_progres') id_progres: string,
 ): Promise<any> {

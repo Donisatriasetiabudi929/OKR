@@ -122,12 +122,20 @@ export class KeyresultController {
 
             if (assign_to) {
                 const profile = await this.keyresultService.getProfileById(assign_to);
-
+            
                 if (profile) {
                     nama_profile = profile.nama;
                     foto_profile = profile.foto;
                 } else {
                     throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
+                }
+            } else {
+                // Jika assign_to tidak diinputkan, pertahankan nilai sebelumnya
+                const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
+            
+                if (existingKeyresult) {
+                    nama_profile = existingKeyresult.nama_profile;
+                    foto_profile = existingKeyresult.foto_profile;
                 }
             }
 

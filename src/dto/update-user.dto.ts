@@ -1,13 +1,18 @@
 import { PartialType } from "@nestjs/mapped-types";
 import { SignUpDto } from "./signup.dto";
-import { IsEmpty } from "class-validator";
+import { IsEmpty, IsString, MinLength } from "class-validator";
 import { User } from "src/schema/user.schema";
 
-export class UpdateUserDto extends PartialType(SignUpDto){
+export class UpdateUserDto {
 
+    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
+    readonly name:string;
+
+    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
+    @MinLength(6)//Untuk mengatur minimal length value
+    readonly password:string;
+
+    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
     readonly role:string;
-
-    @IsEmpty({ message: "You cannot pass user id" })
-    readonly user: User;
 
 }

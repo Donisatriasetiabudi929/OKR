@@ -86,13 +86,19 @@ export class ProgresService {
 
     async createProgres(createProgresDto: CreateProgresDto): Promise<IProgres> {
         const { id_projek, id_objek, id_keyresult, id_profile, nama_profile, foto_profile, tanggal, nama, total, file, link, status } = createProgresDto;
-
+        const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const existingProgres = await this.progresModel.findOne({ nama });
-
+    
         if (existingProgres) {
-            throw new Error('progres dengan nama tersebut sudah ada');
+            throw new Error('Progres dengan nama tersebut sudah ada');
         }
-
+    
+        const keyresult = await this.objektifModel.findById(id_keyresult);
+    
+        if (!keyresult) {
+            throw new NotFoundException(`Keyresult dengan ID ${id_keyresult} tidak ditemukan`);
+        }
+    
         const newProgres = new this.progresModel({
             id_projek,
             id_objek,
@@ -100,16 +106,17 @@ export class ProgresService {
             id_profile,
             nama_profile,
             foto_profile,
-            nama,
+            nama: nama1,
             tanggal,
             total,
             file,
             link,
             status: "Pending"
         });
-
         return newProgres.save();
     }
+    
+    
 
     async deleteCache(key: string): Promise<void> {
         try {
@@ -152,6 +159,15 @@ export class ProgresService {
     
         return progres;
     }
+
+    // Di dalam progresService
+
+async getPendingProgresByStatusAndKeyresult(idKeyresult: string): Promise<IProgres[]> {
+    // Misalnya, Progres adalah model dari data progres
+    const pendingProgres = await this.progresModel.find({ status: 'Pending', id_keyresult: idKeyresult }).exec();
+    return pendingProgres;
+}
+
     
     
     

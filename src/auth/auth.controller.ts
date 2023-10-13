@@ -4,35 +4,24 @@ import { SignUpDto } from 'src/dto/signup.dto';
 import { LoginDto } from 'src/dto/login.dto';
 import { UpdateUserDto } from 'src/dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { BadRequestException } from '@nestjs/common';
+
 
 @Controller('auth')
 export class AuthController {
-    constructor( private authService: AuthService ){}
+    constructor(private authService: AuthService) { }
 
     //Untuk menangani permintaan HTTP POST
-    @Post('/signup')    
+    @Post('/signup')
     @UseGuards(AuthGuard())
     signUp(@Body() signUpDto: SignUpDto): Promise<{ token: string }> {
-    return this.authService.signUp(signUpDto);
+        return this.authService.signUp(signUpDto);
     }
 
 
-    @Put('/role/:id')
-@UseGuards(AuthGuard())
-async updateRole(@Res() Response, @Param('id') profileId: string, @Body() updateUserDto: UpdateUserDto, @Req() Req) {
-    try {
-        const existingProfile = await this.authService.updateRole(profileId, updateUserDto.role);
-        return Response.status(HttpStatus.OK).json({
-            message: 'Berhasil update role',
-            existingProfile,
-        });
-    } catch (err) {
-        console.error(`Error saat memperbarui role: ${err}`);
-        throw new Error('Terjadi kesalahan saat memperbarui role');
-    }
-}
+    
 
-@Get('/all')
+    @Get('/all')
     async getUplouds(@Res() Response) {
         try {
             const userData = await this.authService.getAllUser();
@@ -44,10 +33,28 @@ async updateRole(@Res() Response, @Param('id') profileId: string, @Body() update
         }
     }
 
+    @Put('/:id')
+    @UseGuards(AuthGuard())
+async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Res() Response) {
+    try {
+        const updatedUser = await this.authService.updateUserById(id, updateUserDto);
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Data user berhasil diperbarui',
+            user: updatedUser
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat memperbarui data user'
+        });
+    }
+}
+
+
 
     //Untuk menangani permintaan HTTP GET
     @Post('/login')
-    login(@Body() loginDto: LoginDto): Promise<{ token: string }>{
+    login(@Body() loginDto: LoginDto): Promise<{ token: string }> {
         return this.authService.login(loginDto);
     }
 

@@ -24,7 +24,7 @@ export class ProjekService {
     //Create Projek
     async createProjek(createProjekDto: CreateProjekDto): Promise<IProjek>{
         const { nama, deskripsi, start_date, end_date, team } = createProjekDto;
-    
+        const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         // Memeriksa apakah ada nilai yang sama dalam 'team'
         if (new Set(team).size !== team.length) {
             throw new Error('Data team tidak boleh sama');
@@ -36,7 +36,7 @@ export class ProjekService {
         }
     
         const newProjek = new this.projekModel({
-            nama,
+            nama: nama1,
             deskripsi,
             start_date,
             end_date,
@@ -47,24 +47,51 @@ export class ProjekService {
         return newProjek.save(); 
     }
     
-    
-    
-
     //Update Projek
     async updateProjek(projekId: string, updateProjekDto: CreateProjekDto): Promise<IProjek> {
         const { nama, deskripsi, start_date, end_date, team,  status } = updateProjekDto;
+        
+        const updateFields: any = {}; // Objek untuk menyimpan bidang yang akan diperbarui
+    
+        if (nama) {
+            updateFields.nama = nama.replace(/\b\w/g, char => char.toUpperCase());
+        }
+    
+        if (deskripsi) {
+            updateFields.deskripsi = deskripsi;
+        }
+    
+        if (start_date) {
+            updateFields.start_date = start_date;
+        }
+    
+        if (end_date) {
+            updateFields.end_date = end_date;
+        }
+    
+        if (team) {
+            updateFields.team = team;
+        }
+    
+        if (status) {
+            updateFields.status = status;
+        }
+    
         const updatedProjek = await this.projekModel.findByIdAndUpdate(
             projekId,
-            { $set: { nama, deskripsi, start_date, end_date, team, status } },
+            { $set: updateFields },
             { new: true }
         );
+    
         if (!updatedProjek) {
             throw new NotFoundException(`Projek dengan ID ${projekId} tidak ditemukan!`);
         }
+    
         await this.updateCache();
         await this.deleteCache(`002:${updatedProjek.id}`);
         return updatedProjek;
     }
+    
 
     //Show all projek
     async getAllProjek():Promise<IProjek[]>{

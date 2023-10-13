@@ -2,7 +2,7 @@ import {Document} from 'mongoose'
 export interface IKeyresult extends Document{
     readonly id_projek: string;
     readonly id_objek: string;
-    readonly nama: string;
+    nama: string;
     readonly file: string;
     readonly link: string;
     readonly assign_to: string;

@@ -82,6 +82,7 @@ export class KeyresultService {
 
     async createKeyresult(createKeyresultDto: CreateKeyresultDto): Promise<IKeyresult> {
         const { id_projek, id_objek, nama, file, link, assign_to, nama_profile, foto_profile, target_value, current_value, status } = createKeyresultDto;
+        const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
 
         const existingKeyresult = await this.keyresultModel.findOne({ nama });
 
@@ -142,16 +143,23 @@ export class KeyresultService {
             },
             { new: true }
         );
-
+    
         if (!updatedUploud) {
             throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak ditemukan`);
         }
+    
+        // Update nama to be capitalized
+        updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        await updatedUploud.save();  // Simpan perubahan ke database
+    
         await this.deleteCache(`004`);
         await this.deleteCache(`004:${updatedUploud.id}`);
         await this.deleteCache(`004:projek:${updatedUploud.id_projek}`);
         await this.deleteCache(`004:objek:${updatedUploud.id_objek}`);
+        
         return updatedUploud;
     }
+    
 
 
     async getKeyresultById(keyresultId: string): Promise<IKeyresult | null> {

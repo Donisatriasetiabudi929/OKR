@@ -23,6 +23,7 @@ export class ObjektifService {
 
     async createObjektif(createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
         const { id_projek, nama } = createObjektifDto;
+        const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const existingObjektif = await this.objektifModel.findOne({ nama });
         if (existingObjektif) {
             throw new Error('Objektif dengan nama tersebut sudah ada');
@@ -30,7 +31,7 @@ export class ObjektifService {
 
         const newObjektif = new this.objektifModel({
             id_projek,
-            nama,
+            nama: nama1,
             status: "Progress"
         });
         await this.deleteCache(`003`);
@@ -42,15 +43,26 @@ export class ObjektifService {
 
 
     async updateObjektif(objektifId: string, createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
-        const existingObjektif = await this.objektifModel.findByIdAndUpdate(objektifId, createObjektifDto, { new: true });
+        const { nama, ...rest } = createObjektifDto;
+        const updateFields: any = { ...rest }; // Salin semua bidang ke objek pembaruan
+    
+        if (nama) {
+            updateFields.nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        }
+    
+        const existingObjektif = await this.objektifModel.findByIdAndUpdate(objektifId, updateFields, { new: true });
+    
         if (!existingObjektif) {
             throw new NotFoundException(`Siswa #${objektifId} tidak tersedia!`);
         }
+    
         await this.deleteCache(`003`);
         await this.deleteCache(`003:${existingObjektif.id}`);
         await this.deleteCache(`003:projek:${existingObjektif.id_projek}`);
+    
         return existingObjektif;
     }
+    
 
     async getAllObjek(): Promise<IObjektif[]> {
         const cachedData = await this.Redisclient.get('003');

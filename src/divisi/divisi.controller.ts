@@ -9,30 +9,31 @@ export class DivisiController {
 
     //Create divisi endpoint
     @Post()
-    @UseGuards(AuthGuard())
-    async createDivisi(@Res() Response, @Body() createDivisiDto: CreateDivisiDto){
-        try {
-            const newDivisi = await this.divisiService.createDivisi(createDivisiDto);
-            return Response.status(HttpStatus.CREATED).json({
-                message: "Berhasil menambahkan data divisi", 
-                newDivisi
+@UseGuards(AuthGuard())
+async createDivisi(@Res() Response, @Body() createDivisiDto: CreateDivisiDto) {
+    try {
+        const newDivisi = await this.divisiService.createDivisi(createDivisiDto);
+        return Response.status(HttpStatus.CREATED).json({
+            message: "Berhasil menambahkan data divisi",
+            newDivisi
+        });
+    } catch (err) {
+        if (err.message === 'Divisi dengan nama tersebut sudah ada') {
+            return Response.status(HttpStatus.BAD_REQUEST).json({
+                statusCode: 400,
+                message: "Error division not created",
+                error: 'Divisi dengan nama tersebut sudah ada'
             });
-        } catch (err) {
-            if (err.message === 'Divisi dengan nama tersebut sudah ada') {
-                return Response.status(HttpStatus.BAD_REQUEST).json({
-                    statusCode: 400,
-                    message: "Error division not created",
-                    error: 'Divisi dengan nama tersebut sudah ada'
-                });
-            } else {
-                return Response.status(HttpStatus.BAD_REQUEST).json({
-                    statusCode: 400,
-                    message: "Error divisi not created",
-                    error: 'Bad request'
-                });
-            }
+        } else {
+            return Response.status(HttpStatus.BAD_REQUEST).json({
+                statusCode: 400,
+                message: "Error divisi not created",
+                error: 'Bad request'
+            });
         }
     }
+}
+
 
     //Show all Divisi endpoint
     @Get()

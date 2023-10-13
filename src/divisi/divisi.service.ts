@@ -11,8 +11,11 @@ export class DivisiService {
     }
 
     //Create divisi
-    async createDivisi(createDivisiDto: CreateDivisiDto): Promise<IDivisi>{
-        const { nama } = createDivisiDto;
+    async createDivisi(createDivisiDto: CreateDivisiDto): Promise<IDivisi> {
+        let { nama } = createDivisiDto;
+    
+        // Ubah setiap kata menjadi diawali huruf besar
+        nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());
     
         // Lakukan pengecekan apakah kategori dengan nama tersebut sudah ada
         const existingDivisi = await this.divisiModel.findOne({ nama });
@@ -21,9 +24,10 @@ export class DivisiService {
             throw new Error('Divisi dengan nama tersebut sudah ada');
         }
     
-        const newDivisi = await new this.divisiModel(createDivisiDto);
-        return newDivisi.save(); 
+        const newDivisi = await new this.divisiModel({ nama });
+        return newDivisi.save();
     }
+    
     
     //Show All divisi
     async getAllDivisi():Promise<IDivisi[]>{
