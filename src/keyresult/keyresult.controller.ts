@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Param, Post, Put, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { KeyresultService } from './keyresult.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateKeyresultDto } from 'src/dto/create.keyresult.dto';
@@ -274,6 +274,23 @@ async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() 
             });
         }
     }
+
+    @Delete('/:id')
+@UseGuards(AuthGuard())
+async deleteKeyresult(@Param('id') keyresultId: string, @Res() Response) {
+    try {
+        // Hapus keyresult berdasarkan ID
+        await this.keyresultService.deleteKeyresult(keyresultId);
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil hapus data keyresult'
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat menghapus data keyresult'
+        });
+    }
+}
 
 
 }

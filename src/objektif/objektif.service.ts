@@ -5,15 +5,22 @@ import { CreateObjektifDto } from 'src/dto/create.objektif.dto';
 import { IObjektif } from 'src/interface/objektif.interface';
 import { Redis } from 'ioredis';
 import { IProjek } from 'src/interface/projek.interface';
-
+import { IProgres } from 'src/interface/progres.interface';
+import { IKeyresult } from 'src/interface/keyresult.interface';
+import * as Minio from 'minio';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ObjektifService {
+    private minioClient: Minio.Client;
     private readonly Redisclient: Redis;
 
     constructor(
+        private configService: ConfigService,
         @InjectModel('Objektif') private objektifModel: Model<IObjektif>,
-        @InjectModel('Projek') private projekModel: Model<IProjek>
+        @InjectModel('Projek') private projekModel: Model<IProjek>,
+        @InjectModel('Progres') private progresModel: Model<IProgres>,
+        @InjectModel('Keyresult') private keyresultModel: Model<IKeyresult>,
     ) {
         this.Redisclient = new Redis({
             port: 6379,
@@ -22,6 +29,13 @@ export class ObjektifService {
             username: '',
             //Optional
             db: 1
+        });
+        this.minioClient = new Minio.Client({
+            endPoint: '127.0.0.1',
+            port: 9000,
+            useSSL: false,
+            accessKey: this.configService.get<string>('MINIO_ACCESS_KEY'),
+            secretKey: this.configService.get<string>('MINIO_SECRET_KEY')
         });
     }
 
@@ -46,7 +60,7 @@ export class ObjektifService {
         const newObjektif = new this.objektifModel({
             id_projek,
             nama: nama1,
-            status: "Progress"
+            status: "Finish"
         });
         await this.deleteCache(`003`);
         await this.deleteCache(`002`);
@@ -152,5 +166,97 @@ export class ObjektifService {
             throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
         }
     }
+
+    async deleteFile(bucketName: string, objectName: string): Promise<void> {
+        try {
+            await this.minioClient.removeObject(bucketName, objectName);
+            console.log(`File ${objectName} telah dihapus dari Minio`);
+        } catch (error) {
+            console.error(`Error saat menghapus file dari Minio: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus file dari Minio');
+        }
+    }
+
+    async deleteObjektif(objekId: string): Promise<void> {
+        const deletedObjek = await this.objektifModel.findByIdAndDelete(objekId);
+        console.log(deletedObjek);
+        
+    
+        if (!deletedObjek) {
+            throw new NotFoundException(`Objektif dengan ID ${objekId} tidak tersedia!`);
+        }
+    
+        const deletedKeyresults = await this.keyresultModel.find({ id_objek: objekId });
+        console.log(deletedKeyresults);
+        
+    
+        for (const deletedKeyresult of deletedKeyresults) {
+            const deleteprogres = await this.progresModel.find({ id_keyresult: deletedKeyresult.id });
+            console.log(deleteprogres);
+            
+    
+            for (const progres of deleteprogres) {
+                if (progres.file) {
+                    await this.deleteFile('okr.progres', progres.file);
+                }
+            }
+    
+            // Menghapus keyresult berdasarkan id_objek
+            await this.keyresultModel.deleteMany({ id_objek: objekId });
+    
+            // Menghapus progres berdasarkan id_keyresult
+            await this.progresModel.deleteMany({ id_keyresult: deletedKeyresult.id });
+    
+            // Hapus file jika ada
+            if (deletedKeyresult.file) {
+                await this.deleteFile('okr.keyresult', deletedKeyresult.file);
+            }
+        }
+    
+        // Memeriksa apakah total current_value mencapai target_value
+        const projek = deletedObjek.id_projek;
+        const keyresults = await this.keyresultModel.find({ id_projek: projek });
+        let totalCurrentValue = 0;
+        let totalTargetValue = 0;
+    
+        keyresults.forEach(keyresult => {
+            totalCurrentValue += keyresult.current_value;
+            totalTargetValue += parseInt(keyresult.target_value);
+        });
+
+        const kondisi = totalCurrentValue >= totalTargetValue;
+    
+        if (kondisi) {
+            // Jika totalCurrentValue >= totalTargetValue, ubah status objektif dan projek menjadi "Finish"
+            const idprojek = deletedObjek.id_projek;
+            const projek = await this.projekModel.findById(idprojek);
+            if (projek) {
+                projek.status = "Finish";
+                await projek.save();
+            }
+        } else {
+            const idprojek = deletedObjek.id_projek;
+            const projek = await this.projekModel.findById(idprojek);
+            if (projek) {
+                projek.status = "Progress";
+                await projek.save();
+            }
+        }
+        console.log(kondisi);
+        
+    
+        await this.deleteCache(`004`);
+        await this.deleteCache(`002`);
+        await this.deleteCache(`003`);
+        await this.deleteCache(`003:${deletedObjek.id}`);
+        await this.deleteCache(`003:projek:${deletedObjek.id_projek}`);
+        await this.deleteCache(`002:${deletedObjek.id_projek}`);
+        await this.deleteCache(`004:${deletedObjek.id}`);
+        await this.deleteCache(`004:projek:${deletedObjek.id_projek}`);
+        await this.deleteCache(`004:objek:${deletedObjek.id}`);
+    }
+    
+    
+    
 
 }

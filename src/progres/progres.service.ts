@@ -120,6 +120,7 @@ export class ProgresService {
             status: "Pending"
         });
         await this.deleteCache(`006`);
+        await this.deleteCache(`006:pending`);
         await this.updateCache();
         return newProgres.save();
     }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
 import { ObjektifService } from './objektif.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateObjektifDto } from 'src/dto/create.objektif.dto';
@@ -109,5 +109,21 @@ export class ObjektifController {
         }
     }
 
+    @Delete('/:id')
+@UseGuards(AuthGuard())
+async deleteObjektif(@Param('id') objektifId: string, @Res() Response) {
+    try {
+        // Hapus Objektif berdasarkan ID
+        await this.objektifService.deleteObjektif(objektifId);
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil hapus data Objektif'
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat menghapus data Objektif'
+        });
+    }
+}
 
 }

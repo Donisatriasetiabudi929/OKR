@@ -10,7 +10,7 @@ export interface IProgres extends Document {
     nama: string;
     deskripsi: string;
     readonly total: number;
-    readonly file: string;
+    file: string;
     readonly link: string;
     status: string;
 }

@@ -11,6 +11,7 @@ import { Readable } from 'stream';
 import { randomBytes } from 'crypto';
 import { IObjektif } from 'src/interface/objektif.interface';
 import { IProjek } from 'src/interface/projek.interface';
+import { IProgres } from 'src/interface/progres.interface';
 
 
 @Injectable()
@@ -21,6 +22,7 @@ export class KeyresultService {
         @InjectModel('Profile') private readonly profileModel: Model<IProfile>,
         @InjectModel('Objektif') private readonly objektifModel: Model<IObjektif>,
         @InjectModel('Projek') private readonly projekModel: Model<IProjek>,
+        @InjectModel('Progres') private readonly progresModel: Model<IProgres>,
     ) {
         //Untuk menghubungkan redis server
         this.Redisclient = new Redis({
@@ -108,7 +110,7 @@ export class KeyresultService {
         }
 
         const projek = await this.projekModel.findById(id_projek);
-        if(!projek){
+        if (!projek) {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
         if (projek.status === "Finish") {
@@ -186,11 +188,11 @@ export class KeyresultService {
             },
             { new: true }
         );
-    
+
         if (!updatedUploud) {
             throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak ditemukan`);
         }
-    
+
         // Update nama to be capitalized
         updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const value_target = parseInt(target_value);
@@ -198,7 +200,7 @@ export class KeyresultService {
         const kondisi = value_target < value_current;
         if (kondisi) {
             throw new Error('Gagal update keyresult (Target value kurang dari current value)');
-            
+
         }
         console.log("nilai target" + value_target);
         console.log("nilai current" + value_current);
@@ -218,20 +220,20 @@ export class KeyresultService {
             await projek.save();
         }
         console.log(projek);
-        
+
         const keyresult = await this.keyresultModel.findById(keyresultId);
         if (keyresult) {
             keyresult.status = "Progress";
             await keyresult.save();
-        }        
+        }
         console.log(keyresult);
 
 
-        
-            await updatedUploud.save();
-        
-          // Simpan perubahan ke database
-    
+
+        await updatedUploud.save();
+
+        // Simpan perubahan ke database
+
         await this.deleteCache(`004`);
         await this.deleteCache(`002`);
         await this.deleteCache(`003`);
@@ -241,10 +243,10 @@ export class KeyresultService {
         await this.deleteCache(`004:${updatedUploud.id}`);
         await this.deleteCache(`004:projek:${updatedUploud.id_projek}`);
         await this.deleteCache(`004:objek:${updatedUploud.id_objek}`);
-        
+
         return updatedUploud;
     }
-    
+
 
 
     async getKeyresultById(keyresultId: string): Promise<IKeyresult | null> {
@@ -277,7 +279,7 @@ export class KeyresultService {
             if (!existingKeyresult) {
                 throw new NotFoundException(`Projek dengan #${keyresultId} tidak tersedia`);
             }
-            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingKeyresult)); 
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingKeyresult));
             return existingKeyresult;
         }
     }
@@ -338,5 +340,88 @@ export class KeyresultService {
             throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
         }
     }
+
+    async deleteKeyresult(keyresultId: string): Promise<void> {
+        const deletedKeyresult = await this.keyresultModel.findByIdAndDelete(keyresultId);
+
+        if (!deletedKeyresult) {
+            throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak tersedia!`);
+        }
+
+        const deleteprogres = await this.progresModel.find({ id_keyresult: keyresultId });
+
+        for (const progres of deleteprogres) {
+            if (progres.file) {
+                await this.deleteFile('okr.progres', progres.file);
+            }
+        }
+
+        await this.progresModel.deleteMany({ id_keyresult: keyresultId });
+
+        // Hapus file jika ada
+        if (deletedKeyresult.file) {
+            await this.deleteFile('okr.keyresult', deletedKeyresult.file);
+        }
+
+        // Memeriksa apakah total current_value mencapai target_value
+        const objekId = deletedKeyresult.id_objek;
+        const keyresults = await this.keyresultModel.find({ id_objek: objekId });
+        let totalCurrentValue = 0;
+        let totalTargetValue = 0;
+
+        keyresults.forEach(keyresult => {
+            totalCurrentValue += keyresult.current_value;
+            totalTargetValue += parseInt(keyresult.target_value);
+        });
+
+        if (totalCurrentValue >= totalTargetValue) {
+            // Jika totalCurrentValue >= totalTargetValue, ubah status objektif dan projek menjadi "Finish"
+            const objektif = await this.objektifModel.findById(objekId);
+            if (objektif) {
+                objektif.status = "Finish";
+                await objektif.save();
+            }
+
+            const projekId = objektif?.id_projek;
+            const projek = await this.projekModel.findById(projekId);
+            if (projek) {
+                projek.status = "Finish";
+                await projek.save();
+            }
+            await this.deleteCache(`004`);
+            await this.deleteCache(`002`);
+            await this.deleteCache(`003`);
+            await this.deleteCache(`003:${deletedKeyresult.id_objek}`);
+            await this.deleteCache(`003:projek:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`002:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`004:${deletedKeyresult.id}`);
+            await this.deleteCache(`004:projek:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`004:objek:${deletedKeyresult.id_objek}`);
+        } else {
+            // Jika totalCurrentValue < totalTargetValue, ubah status objektif dan projek menjadi "Progress"
+            const objektif = await this.objektifModel.findById(objekId);
+            if (objektif) {
+                objektif.status = "Progress";
+                await objektif.save();
+            }
+
+            const projekId = objektif?.id_projek;
+            const projek = await this.projekModel.findById(projekId);
+            if (projek) {
+                projek.status = "Progress";
+                await projek.save();
+            }
+            await this.deleteCache(`004`);
+            await this.deleteCache(`002`);
+            await this.deleteCache(`003`);
+            await this.deleteCache(`003:${deletedKeyresult.id_objek}`);
+            await this.deleteCache(`003:projek:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`002:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`004:${deletedKeyresult.id}`);
+            await this.deleteCache(`004:projek:${deletedKeyresult.id_projek}`);
+            await this.deleteCache(`004:objek:${deletedKeyresult.id_objek}`);
+        }
+    }
+
 
 }
