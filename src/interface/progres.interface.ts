@@ -8,6 +8,7 @@ export interface IProgres extends Document {
     readonly foto_profile: string;
     readonly tanggal: string;
     nama: string;
+    readonly deskripsi: string;
     readonly total: number;
     readonly file: string;
     readonly link: string;

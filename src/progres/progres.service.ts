@@ -89,8 +89,9 @@ export class ProgresService {
     }
 
     async createProgres(createProgresDto: CreateProgresDto): Promise<IProgres> {
-        const { id_projek, id_objek, id_keyresult, id_profile, nama_profile, foto_profile, tanggal, nama, total, file, link, status } = createProgresDto;
+        const { id_projek, id_objek, id_keyresult, id_profile, nama_profile, foto_profile, tanggal, nama, deskripsi, total, file, link, status } = createProgresDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        const desc = deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
         const existingProgres = await this.progresModel.findOne({ nama });
 
         if (existingProgres) {
@@ -111,6 +112,7 @@ export class ProgresService {
             nama_profile,
             foto_profile,
             nama: nama1,
+            deskripsi: desc,
             tanggal,
             total,
             file,
@@ -296,6 +298,7 @@ export class ProgresService {
     async updateProgres(
         progresId: string,
             nama: string,
+            deskripsi: string,
             filee: string,
             link: string
         ): Promise<IProgres> {
@@ -303,6 +306,7 @@ export class ProgresService {
                 progresId,
                 {
                     nama,
+                    deskripsi,
                     file: filee || undefined,  // Set to undefined if filee is falsy
                     link
                 },

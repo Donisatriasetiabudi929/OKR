@@ -29,6 +29,9 @@ export class Progres {
     nama: string;
 
     @Prop()
+    deskripsi: string;
+
+    @Prop()
     total: number;
 
     @Prop()

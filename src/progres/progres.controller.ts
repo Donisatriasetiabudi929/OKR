@@ -46,6 +46,7 @@ export class ProgresController {
                 id_profile,
                 tanggal,
                 nama,
+                deskripsi,
                 total,
                 link,
                 status
@@ -100,6 +101,7 @@ export class ProgresController {
                     foto_profile: dataprofile.foto,
                     tanggal,
                     nama,
+                    deskripsi,
                     total,
                     file,
                     link,
@@ -233,6 +235,7 @@ export class ProgresController {
             }
             const {
                 nama,
+                deskripsi,
                 link,
             } = createProgresDto;
 
@@ -276,6 +279,7 @@ export class ProgresController {
             const updateProgres = await this.progresService.updateProgres(
                 progresId,
                 nama,
+                deskripsi,
                 updatedFile,
                 link
             );

@@ -28,6 +28,10 @@ export class CreateProgresDto{
     @IsNotEmpty()
     readonly nama: string;
 
+    @IsString()
+    @IsNotEmpty()
+    readonly deskripsi: string;
+
     @IsNumber()
     @IsNotEmpty()
     readonly total: number;
