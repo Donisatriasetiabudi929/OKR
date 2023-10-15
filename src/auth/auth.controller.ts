@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Put, Res, Param, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Res, Param, HttpStatus, UseGuards, Req, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from 'src/dto/signup.dto';
 import { LoginDto } from 'src/dto/login.dto';
@@ -77,6 +77,22 @@ async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, 
         } catch (err) {
             return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
                 message: 'Terjadi kesalahan saat mengambil data user'
+            });
+        }
+    }
+
+    @Delete('/:id')
+    async deleteUser(@Res() Response, @Param('id') userId: string) {
+        try {
+            // Dapatkan data uploud berdasarkan ID
+            const deletedUser = await this.authService.deleteUser(userId);
+            return Response.status(HttpStatus.OK).json({
+                message: 'Berhasil hapus data uploud',
+                deletedUser
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat menghapus data uploud'
             });
         }
     }

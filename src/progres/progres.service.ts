@@ -319,6 +319,7 @@ export class ProgresService {
         
             // Update nama to be capitalized
             updateProgres.nama = updateProgres.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+            updateProgres.deskripsi = updateProgres.deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
             await updateProgres.save();
 
             await this.updateCache();

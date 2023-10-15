@@ -10,14 +10,17 @@ import { UpdateUserDto } from 'src/dto/update-user.dto';
 import { IUser } from 'src/interface/user.interface';
 import { Redis } from 'ioredis';
 import { IProfile } from 'src/interface/profile.interface';
+import * as Minio from 'minio';
+import { ConfigService } from '@nestjs/config';
 
 
 
 @Injectable()
 export class AuthService {
     private readonly Redisclient: Redis;
+    private minioClient: Minio.Client;
     //Untuk menyuntikkan model pengguna serta layanan JWT
-    constructor(
+    constructor(private configService: ConfigService,
         @InjectModel(User.name)
         private userModel: Model<User>,
         private jwtService: JwtService,
@@ -31,6 +34,13 @@ export class AuthService {
             //Optional
             db: 1
         });
+        this.minioClient = new Minio.Client({
+            endPoint: '127.0.0.1',
+            port: 9000,
+            useSSL: false,
+            accessKey: this.configService.get<string>('MINIO_ACCESS_KEY'),
+            secretKey: this.configService.get<string>('MINIO_SECRET_KEY')
+        });
     }
 
     async getUser(userId: string): Promise<IUser> {
@@ -39,6 +49,16 @@ export class AuthService {
             throw new NotFoundException(`User dengan #${userId} tidak tersedia`);
         }
         return existingUser;
+    }
+
+    async deleteFile(bucketName: string, objectName: string): Promise<void> {
+        try {
+            await this.minioClient.removeObject(bucketName, objectName);
+            console.log(`File ${objectName} telah dihapus dari Minio`);
+        } catch (error) {
+            console.error(`Error saat menghapus file dari Minio: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus file dari Minio');
+        }
     }
 
     async getAllUser(): Promise<IUser[]> {
@@ -183,12 +203,19 @@ export class AuthService {
         return { token };
     }
 
-
-
-
-
-
-
-
+    async deleteUser(userId: string): Promise<IUser> {
+        const deletedUser = await this.userModel.findByIdAndDelete(userId);
+    
+        if (!deletedUser) {
+            throw new NotFoundException(`Data uploud dengan ID ${userId} tidak tersedia!`);
+        }
+    
+        // Hapus juga profil berdasarkan id_user
+        const deletedprofile = await this.profileModel.findOneAndDelete({ id_user: userId });
+        if (deletedprofile) {
+            await this.deleteFile('okr.profile', deletedprofile.foto);
+        }
+        return deletedUser;
+    }
 
 }
