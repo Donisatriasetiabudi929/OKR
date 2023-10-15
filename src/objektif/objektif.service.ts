@@ -4,13 +4,17 @@ import { Model } from 'mongoose';
 import { CreateObjektifDto } from 'src/dto/create.objektif.dto';
 import { IObjektif } from 'src/interface/objektif.interface';
 import { Redis } from 'ioredis';
+import { IProjek } from 'src/interface/projek.interface';
 
 
 @Injectable()
 export class ObjektifService {
     private readonly Redisclient: Redis;
 
-    constructor(@InjectModel('Objektif') private objektifModel: Model<IObjektif>) {
+    constructor(
+        @InjectModel('Objektif') private objektifModel: Model<IObjektif>,
+        @InjectModel('Projek') private projekModel: Model<IProjek>
+    ) {
         this.Redisclient = new Redis({
             port: 6379,
             host: '127.0.0.1',
@@ -29,12 +33,24 @@ export class ObjektifService {
             throw new Error('Objektif dengan nama tersebut sudah ada');
         }
 
+        const projek = await this.projekModel.findById(id_projek);
+        if(!projek){
+            throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
+        }
+        if (projek.status === "Finish") {
+            // Jika status projek adalah "Finish", maka ubah status keyresult menjadi "Progress"
+            projek.status = "Progress"; // Ubah status projek menjadi "Progress"
+            await projek.save(); // Simpan perubahan
+        }
+
         const newObjektif = new this.objektifModel({
             id_projek,
             nama: nama1,
             status: "Progress"
         });
         await this.deleteCache(`003`);
+        await this.deleteCache(`002`);
+        await this.deleteCache(`002:${newObjektif.id_projek}`);
         await this.deleteCache(`003:${newObjektif.id}`);
         await this.deleteCache(`003:projek:${newObjektif.id_projek}`);
 
@@ -57,6 +73,8 @@ export class ObjektifService {
         }
     
         await this.deleteCache(`003`);
+        await this.deleteCache(`002`);
+        await this.deleteCache(`002:${existingObjektif.id_projek}`);
         await this.deleteCache(`003:${existingObjektif.id}`);
         await this.deleteCache(`003:projek:${existingObjektif.id_projek}`);
     

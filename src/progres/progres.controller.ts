@@ -218,5 +218,76 @@ export class ProgresController {
         }
     }
 
+    @Put('/:id')
+    @UseInterceptors(FileInterceptor('file'))
+    async updateProgres(
+        @Headers() headers: Record<string, string>,
+        @Param('id') progresId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body() createProgresDto: CreateProgresDto,
+    ): Promise<any> {
+        try {
+            const token = headers['authorization']?.split(' ')[1];
+            if (!token) {
+                return { message: 'Tidak ada token yang diberikan' };
+            }
+            const {
+                nama,
+                link,
+            } = createProgresDto;
+
+            let updatedFile = null;
+
+            if (file) {
+                const uniqueCode = randomBytes(10).toString('hex');
+                const objectName = `${uniqueCode}-${file.originalname}`;
+
+                const readableStream = new Readable();
+                readableStream.push(file.buffer);
+                readableStream.push(null);
+
+                await this.progresService.uploadFile('okr.progres', objectName, readableStream, file.mimetype);
+
+                const existingProgres = await this.progresService.getProgresById(progresId);
+                if (existingProgres && existingProgres.file) {
+                    await this.progresService.deleteFile('okr.progres', existingProgres.file);
+                }
+
+                updatedFile = objectName;
+            }
+
+            const { id_user } = await this.authService.getUserFromToken(token);
+
+            if (!id_user) {
+                return { message: 'id_user tidak valid' };
+            }
+            const profile = await this.progresService.getProfileByIdAuth(id_user);
+
+            if (!profile) {
+                throw new Error(`Profile dengan ID ${profile.id} tidak ditemukan!`);
+            }
+
+            const dataprofile = await this.progresService.getProfileById(profile.id);
+
+            if (!dataprofile) {
+                throw new Error(`Profile dengan ID ${profile.id} tidak ditemukan!`);
+            }
+
+            const updateProgres = await this.progresService.updateProgres(
+                progresId,
+                nama,
+                updatedFile,
+                link
+            );
+
+            updateProgres.nama = updateProgres.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+
+            return { message: 'Data berhasil diperbarui', updateProgres };
+        } catch (error) {
+            console.error(`Error saat memperbarui data progres: ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui data progres');
+        }
+    }
+
 
 }

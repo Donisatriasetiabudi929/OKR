@@ -139,6 +139,8 @@ export class KeyresultController {
                 }
             }
 
+            
+
             const updatedResult = await this.keyresultService.updateKeyresult(
                 keyresultId,
                 id_projek,
@@ -153,6 +155,8 @@ export class KeyresultController {
                 current_value,
                 status
             );
+
+            updatedResult.nama = updatedResult.nama.replace(/\b\w/g, (char) => char.toUpperCase());
 
             return { message: 'Data berhasil diperbarui', updatedResult };
         } catch (error) {

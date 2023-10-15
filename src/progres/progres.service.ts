@@ -9,6 +9,8 @@ import { IKeyresult } from 'src/interface/keyresult.interface';
 import { IProfile } from 'src/interface/profile.interface';
 import { Readable } from 'stream';
 import { CreateProgresDto } from 'src/dto/create.progres.dto';
+import { IObjektif } from 'src/interface/objektif.interface';
+import { IProjek } from 'src/interface/projek.interface';
 
 
 
@@ -18,7 +20,9 @@ export class ProgresService {
     private minioClient: Minio.Client;
     constructor(private configService: ConfigService, @InjectModel('Progres') private progresModel: Model<IProgres>,
         @InjectModel('Profile') private readonly profileModel: Model<IProfile>,
-        @InjectModel('Keyresult') private readonly objektifModel: Model<IKeyresult>,
+        @InjectModel('Keyresult') private readonly keyresultModel: Model<IKeyresult>,
+        @InjectModel('Objektif') private readonly objekModel: Model<IObjektif>,
+        @InjectModel('Projek') private readonly projekModel: Model<IProjek>,
     ) {
         //Untuk menghubungkan redis server
         this.Redisclient = new Redis({
@@ -67,7 +71,7 @@ export class ProgresService {
         return this.profileModel.findById(id).exec();
     }
     async getKeyresultById(idKeyresult: string): Promise<IKeyresult | null> {
-        return this.objektifModel.findById(idKeyresult).exec();
+        return this.keyresultModel.findById(idKeyresult).exec();
     }
 
     async getProfileByIdAuth(id_user: string): Promise<IProfile> {
@@ -93,7 +97,7 @@ export class ProgresService {
             throw new Error('Progres dengan nama tersebut sudah ada');
         }
 
-        const keyresult = await this.objektifModel.findById(id_keyresult);
+        const keyresult = await this.keyresultModel.findById(id_keyresult);
 
         if (!keyresult) {
             throw new NotFoundException(`Keyresult dengan ID ${id_keyresult} tidak ditemukan`);
@@ -143,7 +147,7 @@ export class ProgresService {
 
         progres.status = "Approve";
 
-        const keyresult = await this.objektifModel.findById(progres.id_keyresult);
+        const keyresult = await this.keyresultModel.findById(progres.id_keyresult);
 
         if (!keyresult) {
             throw new NotFoundException(`Keyresult dengan ID ${progres.id_keyresult} tidak ditemukan!`);
@@ -151,10 +155,45 @@ export class ProgresService {
 
         keyresult.current_value += progres.total; // Menggunakan progres.total
 
+        if (Number(keyresult.current_value) >= parseInt(keyresult.target_value)) {
+            keyresult.status = "Finish"; // Mengubah status menjadi "Finish"
+        }
+
         await progres.save();
         await keyresult.save();
 
+        // Cek apakah total current_value dari keyresult dengan id_objek yang sama mencapai target_value
+        const keyresultsWithSameObjek = await this.keyresultModel.find({ id_objek: keyresult.id_objek });
+        const totalCurrentValues = keyresultsWithSameObjek.reduce((total) => total + Number(keyresult.current_value), 0);
+        console.log(keyresultsWithSameObjek);
+        console.log(totalCurrentValues);
+        
+        
+        if (totalCurrentValues >= keyresultsWithSameObjek.length * parseInt(keyresult.target_value)) {
+            const objek = await this.objekModel.findById(progres.id_objek);
+            console.log("data objek " + objek);
+            if (!objek) {
+                throw new NotFoundException(`Objek dengan ID ${keyresult.id_objek} tidak ditemukan!`);
+            }
+            objek.status = "Finish"; // Mengubah status objek menjadi "Finish"
+            await objek.save();
+
+            const projek = await this.projekModel.findById(progres.id_projek);
+            console.log("data projek " + projek);
+            if (!projek) {
+                throw new NotFoundException(`projek dengan ID ${keyresult.id_projek} tidak ditemukan!`);
+            }
+            projek.status = "Finish"; // Mengubah status projek menjadi "Finish"
+            await projek.save();
+
+        }
+
         await this.deleteCache(`004`);
+        await this.deleteCache(`002`);
+        await this.deleteCache(`003`);
+        await this.deleteCache(`003:${keyresult.id_objek}`);
+        await this.deleteCache(`003:projek:${keyresult.id_projek}`);
+        await this.deleteCache(`002:${keyresult.id_projek}`);
         await this.deleteCache(`004:${keyresult.id}`);
         await this.deleteCache(`004:projek:${keyresult.id_projek}`);
         await this.deleteCache(`004:objek:${keyresult.id_objek}`);
@@ -254,6 +293,43 @@ export class ProgresService {
     }
 
 
+    async updateProgres(
+        progresId: string,
+            nama: string,
+            filee: string,
+            link: string
+        ): Promise<IProgres> {
+            const updateProgres = await this.progresModel.findByIdAndUpdate(
+                progresId,
+                {
+                    nama,
+                    file: filee || undefined,  // Set to undefined if filee is falsy
+                    link
+                },
+                { new: true }
+            );
+        
+            if (!updateProgres) {
+                throw new NotFoundException(`Progres dengan ID ${progresId} tidak ditemukan`);
+            }
+        
+            // Update nama to be capitalized
+            updateProgres.nama = updateProgres.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+            await updateProgres.save();
+
+            await this.updateCache();
+            await this.updateCacheApprove();
+            await this.deleteCache(`006`);
+            await this.deleteCache(`006:pending`);
+            await this.deleteCache(`006:approve`);
+            await this.deleteCache(`006:keyresult:${updateProgres.id_keyresult}`);
+            
+            return updateProgres;
+        }
+
+        async getProgresById(progresId: string): Promise<IProgres | null> {
+            return this.progresModel.findById(progresId).exec();
+        }
 
 
 

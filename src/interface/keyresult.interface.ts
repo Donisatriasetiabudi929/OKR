@@ -10,5 +10,5 @@ export interface IKeyresult extends Document{
     readonly foto_profile: string;
     readonly target_value: string;
     current_value: number;
-    readonly status: string;
+    status: string;
 }

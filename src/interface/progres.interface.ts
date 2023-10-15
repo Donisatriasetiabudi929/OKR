@@ -7,7 +7,7 @@ export interface IProgres extends Document {
     readonly nama_profile: string;
     readonly foto_profile: string;
     readonly tanggal: string;
-    readonly nama: string;
+    nama: string;
     readonly total: number;
     readonly file: string;
     readonly link: string;
