@@ -165,6 +165,38 @@ export class KeyresultController {
         }
     }
 
+    @Get('/projek/:id_projek/values')
+async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {
+    try {
+        const keyresults = await this.keyresultService.getKeyresultsByProjekId(idProjek);
+
+        if (!keyresults) {
+            return Response.status(HttpStatus.NOT_FOUND).json({
+                message: 'Data keyresult tidak ditemukan'
+            });
+        }
+
+        let totalTargetValue = 0;
+        let totalCurrentValue = 0;
+
+        keyresults.forEach(keyresult => {
+            totalTargetValue += parseInt(keyresult.target_value);
+            totalCurrentValue += Number(keyresult.current_value);
+        });
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Total target_value dan current_value berhasil dihitung',
+            totalTargetValue,
+            totalCurrentValue
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat menghitung total target_value dan current_value'
+        });
+    }
+}
+
+
     @Get()
     async getProjeks(@Res() Response) {
         try {
