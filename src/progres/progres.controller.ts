@@ -197,6 +197,28 @@ async getStoredNotifications(@Param('idProfile') idProfile: string) {
         }
     }
 
+    @Get('/getdata/:id')
+    async getProgresByid(@Param('id') id: string, @Res() Response) {
+        try {
+            const progres = await this.progresService.getProgres(id);
+
+            if (!progres) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data progres tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data progres berhasil ditemukan',
+                progres
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data progres'
+            });
+        }
+    }
+
     @Get('/status/pending')
     async getAllPendingProgres(@Res() Response) {
         try {

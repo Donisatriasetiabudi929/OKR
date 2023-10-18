@@ -338,6 +338,13 @@ export class ProgresService {
         }
 
 
+        async getProgres(progresId:string):Promise<IProgres>{
+            const existingProgres = await this.progresModel.findById(progresId)
+            if (!existingProgres){
+                throw new NotFoundException(`Siswa dengan #${progresId} tidak tersedia`);
+            }
+            return existingProgres;
+        }
 
 
 }
