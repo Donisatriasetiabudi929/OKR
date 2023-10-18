@@ -346,5 +346,13 @@ export class ProgresService {
             return existingProgres;
         }
 
+        async getApprovedProgresByProfileId(idProfile: string): Promise<IProgres[]> {
+            const approvedProgres = await this.progresModel.find({ id_profile: idProfile, status: 'Approve' })
+                .sort({ tanggal: -1 }) // Ganti 'tanggal' dengan nama kolom tanggal Anda
+                .exec();
+            return approvedProgres;
+        }
+        
+
 
 }

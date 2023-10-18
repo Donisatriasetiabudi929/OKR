@@ -8,6 +8,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ProgresGateway } from './progres.gateway';
 import { io } from 'socket.io-client';
+import { IProgres } from 'src/interface/progres.interface';
 
 
 
@@ -334,6 +335,13 @@ async getStoredNotifications(@Param('idProfile') idProfile: string) {
             console.error(`Error saat memperbarui data progres: ${error}`);
             throw new Error('Terjadi kesalahan saat memperbarui data progres');
         }
+    }
+
+
+    @Get('/dataprogres/approved/:id_profile')
+    async getApprovedProgresByProfileId(@Param('id_profile') idProfile: string): Promise<IProgres[]> {
+        const approvedProgres = await this.progresService.getApprovedProgresByProfileId(idProfile);
+        return approvedProgres;
     }
 
 
