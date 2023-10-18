@@ -71,13 +71,13 @@ export class ProfileController {
             await this.profileService.createUploud(
                 id_user,
                 email,
-                nama,
+                nama.replace(/\b\w/g, (char) => char.toUpperCase()),
                 divisi,
                 notelpon,
                 gender,
                 tanggal_lahir,
                 objectName,
-                bio,
+                bio.replace(/\b\w/g, (char) => char.toUpperCase()),
                 sosmed,
                 grade
             );
@@ -123,16 +123,17 @@ export class ProfileController {
                 const namefilee = `${uniqueCode}-${uploadeddFile.originalname}`;
                 const updatedUploud = await this.profileService.updateUploud(
                     uploudData._id,
-                    nama,
+                    nama.replace(/\b\w/g, (char) => char.toUpperCase()),
                     email,
                     divisi,
                     notelpon,
                     gender,
                     tanggal_lahir,
                     namefilee,
-                    bio,
+                    bio.replace(/\b\w/g, (char) => char.toUpperCase()),
                     sosmed
                 );
+                updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
                 const stream = require('stream');
                 const readableStream = new stream.PassThrough();
                 readableStream.end(uploadeddFile.buffer);
@@ -142,8 +143,8 @@ export class ProfileController {
                     message: 'Profil berhasil diperbarui',
                     updatedUploud
                 });
+                
             } else {
-                // Jika uploadedFile kosong, hanya lakukan pembaruan profil
                 const {
                     nama,
                     email,
@@ -156,17 +157,18 @@ export class ProfileController {
                 } = createProfileDto;
                 const updatedUploud = await this.profileService.updateUploud(
                     uploudData._id,
-                    nama,
+                    nama.replace(/\b\w/g, (char) => char.toUpperCase()),
                     email,
                     divisi,
                     notelpon,
                     gender,
                     tanggal_lahir,
                     uploudData.foto, // Gunakan nama file lama
-                    bio,
+                    bio.replace(/\b\w/g, (char) => char.toUpperCase()),
                     sosmed
                 );
 
+                updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
                 return Response.status(HttpStatus.OK).json({
                     message: 'Profil berhasil diperbarui (tanpa perubahan gambar)',
                     updatedUploud

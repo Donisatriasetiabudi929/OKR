@@ -121,7 +121,7 @@ export class ProgresService {
         });
         await this.deleteCache(`006`);
         await this.deleteCache(`006:pending`);
-        await this.updateCache();
+        await this.deleteCache(`006:keyresult:${newProgres.id_keyresult}`);
         return newProgres.save();
     }
 
@@ -159,7 +159,7 @@ export class ProgresService {
         keyresult.current_value += progres.total; // Menggunakan progres.total
 
         if (Number(keyresult.current_value) >= parseInt(keyresult.target_value)) {
-            keyresult.status = "Finish"; // Mengubah status menjadi "Finish"
+            keyresult.status = "Selesai"; // Mengubah status menjadi "Finish"
         }
 
         await progres.save();
@@ -178,7 +178,7 @@ export class ProgresService {
             if (!objek) {
                 throw new NotFoundException(`Objek dengan ID ${keyresult.id_objek} tidak ditemukan!`);
             }
-            objek.status = "Finish"; // Mengubah status objek menjadi "Finish"
+            objek.status = "Selesai"; // Mengubah status objek menjadi "Finish"
             await objek.save();
 
             const projek = await this.projekModel.findById(progres.id_projek);
@@ -186,7 +186,7 @@ export class ProgresService {
             if (!projek) {
                 throw new NotFoundException(`projek dengan ID ${keyresult.id_projek} tidak ditemukan!`);
             }
-            projek.status = "Finish"; // Mengubah status projek menjadi "Finish"
+            projek.status = "Selesai"; // Mengubah status projek menjadi "Finish"
             await projek.save();
 
         }

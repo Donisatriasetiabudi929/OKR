@@ -6,12 +6,18 @@ import { randomBytes } from 'crypto';
 import { Readable } from 'stream';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
+import { ProgresGateway } from './progres.gateway';
+import { io } from 'socket.io-client';
+
 
 
 @Controller('progres')
 export class ProgresController {
     constructor(
-        private readonly progresService: ProgresService, private readonly authService: AuthService) { }
+        private readonly progresService: ProgresService, 
+        private readonly authService: AuthService,
+        private readonly progresGateway: ProgresGateway, // Tambahkan ProgresGateway
+        ) { }
 
 
     @Post()
@@ -107,6 +113,8 @@ export class ProgresController {
                     link,
                     status,
                 });
+                
+                
                 return { message: 'Data berhasil dikirim', newProgres };
             }
         } catch (error) {
@@ -145,6 +153,12 @@ export class ProgresController {
     ): Promise<any> {
         try {
             const updatedProgres = await this.progresService.approveProgres(id_progres);
+            const notif = await this.progresGateway.onNewMessage(updatedProgres);
+                const socket = io('http://localhost:3050'); // Ganti dengan URL dan port server Socket.io Anda
+                socket.on('progresAdded', (updatedProgres) => {
+                console.log('Progres Baru Ditambahkan:', updatedProgres);
+                });
+                console.log(notif);
 
             return { message: 'Progres berhasil diapprove', updatedProgres };
         } catch (error) {
@@ -152,6 +166,13 @@ export class ProgresController {
             throw new Error('Terjadi kesalahan saat mengapprove progres');
         }
     }
+    @Get('/getStoredNotifications/:idProfile')
+async getStoredNotifications(@Param('idProfile') idProfile: string) {
+    const notifications = await this.progresGateway.getStoredNotifications(idProfile);
+    return notifications;
+}
+
+
 
 
     @Get('/keyresult/:id_keyresult')

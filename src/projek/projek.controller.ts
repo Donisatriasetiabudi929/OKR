@@ -112,22 +112,22 @@ async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProj
     }
 }
 
+@Delete('/:id')
+@UseGuards(AuthGuard())
+async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
+    try {
+        // Hapus projek berdasarkan ID
+        await this.projekService.deleteProjek(projekId);
 
-    //Delete projek endpoint
-    @Delete('/:id')
-    @UseGuards(AuthGuard())
-    async deleteProjek(@Res() Response, @Param('id') projekId: string){
-        try{
-            const deletedProjek = await this.projekService.deleteProjek(projekId)
-            return Response.status(HttpStatus.OK).json({
-                message: 'Berhasil hapus data Divisi',
-                deletedProjek,
-            });
-            await this.projekService.updateCache();
-            await this.projekService.deleteCache(`002:${deletedProjek.id}`);
-        }catch(err){
-            return Response.status(err.status).json(err.Response)
-        }
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil hapus data projek'
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat menghapus data projek'
+        });
     }
+}
+    
 
 }

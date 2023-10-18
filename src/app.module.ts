@@ -27,6 +27,7 @@ import { KeyresultSchema } from './schema/keyresult.schema';
 import { ProgresController } from './progres/progres.controller';
 import { ProgresService } from './progres/progres.service';
 import { ProgresSchema } from './schema/progres.schema';
+import { ProgresGateway } from './progres/progres.gateway';
 
 
 @Module({
@@ -55,7 +56,7 @@ import { ProgresSchema } from './schema/progres.schema';
     MongooseModule.forFeature([{name: 'Progres', schema: ProgresSchema}]),
   ],
   controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController, KeyresultController, ProgresController],
-  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService, ProgresService],
+  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService, ProgresService, ProgresGateway],
   exports: [JwtStrategy, PassportModule],
 })
 export class AppModule {}

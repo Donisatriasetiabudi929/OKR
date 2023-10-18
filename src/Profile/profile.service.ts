@@ -102,6 +102,9 @@ export class ProfileService {
             sosmed,
             grade: '0'
         });
+        newUploud.nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        newUploud.bio = bio.replace(/\b\w/g, (char) => char.toUpperCase());
+        newUploud.bio = bio.replace(/\b\w/g, (char) => char.toUpperCase());
         await this.deleteCache(`001`);
         return newUploud.save();
     }
@@ -208,6 +211,8 @@ export class ProfileService {
             },
             { new: true }
         );
+        updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
 
         if (!updatedUploud) {
             throw new NotFoundException(`Profil dengan ID ${uploudId} tidak ditemukan`);

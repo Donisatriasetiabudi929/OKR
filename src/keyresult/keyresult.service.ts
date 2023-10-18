@@ -102,7 +102,7 @@ export class KeyresultService {
 
         let newStatus = status; // Menyimpan status yang akan digunakan
 
-        if (objektif.status === "Finish") {
+        if (objektif.status === "Selesai") {
             // Jika status objektif adalah "Finish", maka ubah status keyresult menjadi "Progress"
             newStatus = "Progress";
             objektif.status = "Progress"; // Ubah status objektif menjadi "Progress"
@@ -113,7 +113,7 @@ export class KeyresultService {
         if (!projek) {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
-        if (projek.status === "Finish") {
+        if (projek.status === "Selesai") {
             // Jika status projek adalah "Finish", maka ubah status keyresult menjadi "Progress"
             newStatus = "Progress";
             projek.status = "Progress"; // Ubah status projek menjadi "Progress"
@@ -378,14 +378,14 @@ export class KeyresultService {
             // Jika totalCurrentValue >= totalTargetValue, ubah status objektif dan projek menjadi "Finish"
             const objektif = await this.objektifModel.findById(objekId);
             if (objektif) {
-                objektif.status = "Finish";
+                objektif.status = "Selesai";
                 await objektif.save();
             }
 
             const projekId = objektif?.id_projek;
             const projek = await this.projekModel.findById(projekId);
             if (projek) {
-                projek.status = "Finish";
+                projek.status = "Selesai";
                 await projek.save();
             }
             await this.deleteCache(`004`);

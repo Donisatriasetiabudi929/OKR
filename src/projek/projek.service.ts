@@ -4,13 +4,25 @@ import { Model } from 'mongoose';
 import { CreateProjekDto } from 'src/dto/create.projek.dto';
 import { IProjek } from 'src/interface/projek.interface';
 import { Redis } from 'ioredis';
+import * as Minio from 'minio';
+import { ConfigService } from '@nestjs/config';
+import { IObjektif } from 'src/interface/objektif.interface';
+import { IKeyresult } from 'src/interface/keyresult.interface';
+import { IProgres } from 'src/interface/progres.interface';
 
 
 @Injectable()
 export class ProjekService {
+    private minioClient: Minio.Client;
     private readonly Redisclient: Redis;
 
-    constructor(@InjectModel('Projek') private projekModel: Model<IProjek>){
+    constructor(
+        private configService: ConfigService, 
+        @InjectModel('Projek') private projekModel: Model<IProjek>,
+        @InjectModel('Objektif') private objektifModel: Model<IObjektif>,
+        @InjectModel('Keyresult') private keyresultModel: Model<IKeyresult>,
+        @InjectModel('Progres') private progresModel: Model<IProgres>,
+        ){
         this.Redisclient = new Redis({
             port: 6379,
             host: '127.0.0.1',
@@ -19,12 +31,21 @@ export class ProjekService {
             //Optional
             db: 1
         });
+        this.minioClient = new Minio.Client({
+            endPoint: '127.0.0.1',
+            port: 9000,
+            useSSL: false,
+            accessKey: this.configService.get<string>('MINIO_ACCESS_KEY'),
+            secretKey: this.configService.get<string>('MINIO_SECRET_KEY')
+        });
     }
 
+    
     //Create Projek
     async createProjek(createProjekDto: CreateProjekDto): Promise<IProjek>{
         const { nama, deskripsi, start_date, end_date, team } = createProjekDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        const desc = deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
         // Memeriksa apakah ada nilai yang sama dalam 'team'
         if (new Set(team).size !== team.length) {
             throw new Error('Data team tidak boleh sama');
@@ -37,11 +58,11 @@ export class ProjekService {
     
         const newProjek = new this.projekModel({
             nama: nama1,
-            deskripsi,
+            deskripsi: desc,
             start_date,
             end_date,
             team: team || [],  
-            status: "On Progress"
+            status: "Progress"
         });
         await this.deleteCache(`002`);
         return newProjek.save(); 
@@ -58,7 +79,7 @@ export class ProjekService {
         }
     
         if (deskripsi) {
-            updateFields.deskripsi = deskripsi;
+            updateFields.deskripsi = deskripsi.replace(/\b\w/g, char => char.toUpperCase());;
         }
     
         if (start_date) {
@@ -124,17 +145,63 @@ export class ProjekService {
             return existingProjek;
         }
     }
-    
-    //Delete Projek
-    async deleteProjek(projekId: string):Promise<IProjek>{
-        const deletedProjek = await this.projekModel.findByIdAndDelete(projekId)
-        if (!deletedProjek) {
-            throw new NotFoundException(`Projek dengan #${projekId} tidak tersedia!`);
+    async deleteFile(bucketName: string, objectName: string): Promise<void> {
+        try {
+            await this.minioClient.removeObject(bucketName, objectName);
+            console.log(`File ${objectName} telah dihapus dari Minio`);
+        } catch (error) {
+            console.error(`Error saat menghapus file dari Minio: ${error}`);
+            throw new Error('Terjadi kesalahan saat menghapus file dari Minio');
         }
-        await this.updateCache();
-        await this.deleteCache(`002:${deletedProjek.id}`);
-        return deletedProjek;
     }
+    //Delete Projek
+    async deleteProjek(projekId: string): Promise<IProjek> {
+        const deletedProjek = await this.projekModel.findByIdAndDelete(projekId);
+    
+        if (!deletedProjek) {
+            throw new NotFoundException(`Projek dengan ID ${projekId} tidak tersedia!`);
+        }
+    
+        const deletedObjek = await this.objektifModel.find({ id_projek: projekId });
+    
+        for (const objek of deletedObjek) {
+            const deletedKeyresults = await this.keyresultModel.find({ id_objek: objek.id });
+    
+            for (const deletedKeyresult of deletedKeyresults) {
+                const deleteProgres = await this.progresModel.find({ id_keyresult: deletedKeyresult.id });
+    
+                for (const progres of deleteProgres) {
+                    if (progres.file) {
+                        await this.deleteFile('okr.progres', progres.file);
+                    }
+                }
+    
+                // Menghapus keyresult berdasarkan id_objek
+                await this.keyresultModel.deleteMany({ id_objek: objek.id });
+    
+                // Menghapus progres berdasarkan id_keyresult
+                await this.progresModel.deleteMany({ id_keyresult: deletedKeyresult.id });
+    
+                // Hapus file jika ada
+                if (deletedKeyresult.file) {
+                    await this.deleteFile('okr.keyresult', deletedKeyresult.file);
+                }
+            }
+            await this.deleteCache(`004`);
+            await this.deleteCache(`002`);
+            await this.deleteCache(`003`);
+            await this.deleteCache(`003:${objek.id}`);
+            await this.deleteCache(`003:projek:${deletedProjek.id}`);
+            await this.deleteCache(`002:${deletedProjek.id}`);
+            await this.deleteCache(`004:${objek.id}`);
+            await this.deleteCache(`004:projek:${deletedProjek.id}}`);
+            await this.deleteCache(`004:objek:${objek.id}`);
+        }
+    
+        return deletedProjek;
+        
+    }
+    
 
     async updateCache(): Promise<void> {
         try {

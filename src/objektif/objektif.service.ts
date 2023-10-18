@@ -51,7 +51,7 @@ export class ObjektifService {
         if(!projek){
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
-        if (projek.status === "Finish") {
+        if (projek.status === "Selesai") {
             // Jika status projek adalah "Finish", maka ubah status keyresult menjadi "Progress"
             projek.status = "Progress"; // Ubah status projek menjadi "Progress"
             await projek.save(); // Simpan perubahan
@@ -60,7 +60,7 @@ export class ObjektifService {
         const newObjektif = new this.objektifModel({
             id_projek,
             nama: nama1,
-            status: "Finish"
+            status: "Progres"
         });
         await this.deleteCache(`003`);
         await this.deleteCache(`002`);
@@ -231,7 +231,7 @@ export class ObjektifService {
             const idprojek = deletedObjek.id_projek;
             const projek = await this.projekModel.findById(idprojek);
             if (projek) {
-                projek.status = "Finish";
+                projek.status = "Selesai";
                 await projek.save();
             }
         } else {
