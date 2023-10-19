@@ -41,6 +41,7 @@ export class KeyresultController {
                 link,
                 assign_to,
                 target_value,
+                days,
                 current_value,
                 status
             } = createKeyresultDto;
@@ -66,6 +67,7 @@ export class KeyresultController {
                 nama_profile: profile.nama,
                 foto_profile: profile.foto,
                 target_value,
+                days,
                 current_value,
                 status
             });
@@ -94,6 +96,7 @@ export class KeyresultController {
                 link,
                 assign_to,
                 target_value,
+                days,
                 current_value,
                 status
             } = updateKeyresultDto;
@@ -152,6 +155,7 @@ export class KeyresultController {
                 nama_profile,
                 foto_profile,
                 target_value,
+                days,
                 current_value,
                 status
             );

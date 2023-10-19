@@ -163,6 +163,8 @@ export class ProjekService {
         }
     
         const deletedObjek = await this.objektifModel.find({ id_projek: projekId });
+        await this.objektifModel.deleteMany({ id_projek: projekId });
+
     
         for (const objek of deletedObjek) {
             const deletedKeyresults = await this.keyresultModel.find({ id_objek: objek.id });
@@ -186,6 +188,15 @@ export class ProjekService {
                 if (deletedKeyresult.file) {
                     await this.deleteFile('okr.keyresult', deletedKeyresult.file);
                 }
+                await this.deleteCache(`004`);
+                await this.deleteCache(`002`);
+                await this.deleteCache(`003`);
+                await this.deleteCache(`003:${objek.id}`);
+                await this.deleteCache(`003:projek:${deletedProjek.id}`);
+                await this.deleteCache(`002:${deletedProjek.id}`);
+                await this.deleteCache(`004:${objek.id}`);
+                await this.deleteCache(`004:projek:${deletedProjek.id}}`);
+                await this.deleteCache(`004:objek:${objek.id}`);
             }
             await this.deleteCache(`004`);
             await this.deleteCache(`002`);

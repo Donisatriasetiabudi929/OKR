@@ -31,6 +31,10 @@ export class CreateKeyresultDto{
     readonly target_value: string;
 
     @IsNumber()
+    @IsNotEmpty()
+    readonly days: string;
+
+    @IsNumber()
     readonly current_value: number;
 
     readonly status: string;

@@ -32,6 +32,9 @@ export class Keyresult{
     target_value: string;
 
     @Prop()
+    days: string;
+
+    @Prop()
     current_value: number;
 
     @Prop()

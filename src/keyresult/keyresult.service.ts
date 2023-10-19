@@ -85,7 +85,7 @@ export class KeyresultService {
     }
 
     async createKeyresult(createKeyresultDto: CreateKeyresultDto): Promise<IKeyresult> {
-        const { id_projek, id_objek, nama, file, link, assign_to, nama_profile, foto_profile, target_value, current_value, status } = createKeyresultDto;
+        const { id_projek, id_objek, nama, file, link, assign_to, nama_profile, foto_profile, target_value, days, current_value, status } = createKeyresultDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
 
         const existingKeyresult = await this.keyresultModel.findOne({ nama });
@@ -131,6 +131,7 @@ export class KeyresultService {
             nama_profile,
             foto_profile,
             target_value,
+            days,
             current_value: 0,
             status: "Progress"
         });
@@ -159,6 +160,7 @@ export class KeyresultService {
         nama_profile: string,
         foto_profile: string,
         target_value: string,
+        days: string,
         current_value: number,
         status
     ): Promise<IKeyresult> {
@@ -183,6 +185,7 @@ export class KeyresultService {
                 nama_profile,
                 foto_profile,
                 target_value,
+                days,
                 current_value,
                 status
             },
