@@ -28,6 +28,12 @@ import { ProgresController } from './progres/progres.controller';
 import { ProgresService } from './progres/progres.service';
 import { ProgresSchema } from './schema/progres.schema';
 import { ProgresGateway } from './progres/progres.gateway';
+import { TaskController } from './task/task.controller';
+import { TaskService } from './task/task.service';
+import { ProgrestaskController } from './progrestask/progrestask.controller';
+import { ProgrestaskService } from './progrestask/progrestask.service';
+import { TaskSchema } from './schema/task.schema';
+import { ProgrestaskSchema } from './schema/progrestask.schema';
 
 
 @Module({
@@ -54,9 +60,11 @@ import { ProgresGateway } from './progres/progres.gateway';
     MongooseModule.forFeature([{name: 'Objektif', schema: ObjektifSchema}]),
     MongooseModule.forFeature([{name: 'Keyresult', schema: KeyresultSchema}]),
     MongooseModule.forFeature([{name: 'Progres', schema: ProgresSchema}]),
+    MongooseModule.forFeature([{name: 'Task', schema: TaskSchema}]),
+    MongooseModule.forFeature([{name: 'Progrestask', schema: ProgrestaskSchema}]),
   ],
-  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController, KeyresultController, ProgresController],
-  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService, ProgresService, ProgresGateway],
+  controllers: [AppController, AuthController, DivisiController, ProjekController, ProfileController, ObjektifController, KeyresultController, ProgresController, TaskController, ProgrestaskController],
+  providers: [AppService, AuthService, JwtStrategy, DivisiService, ProjekService, ProfileService, ObjektifService, KeyresultService, ProgresService, ProgresGateway, TaskService, ProgrestaskService],
   exports: [JwtStrategy, PassportModule],
 })
 export class AppModule {}

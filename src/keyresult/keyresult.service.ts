@@ -251,7 +251,6 @@ export class KeyresultService {
     }
 
 
-
     async getKeyresultById(keyresultId: string): Promise<IKeyresult | null> {
         return this.keyresultModel.findById(keyresultId).exec();
     }
