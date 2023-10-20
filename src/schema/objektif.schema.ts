@@ -12,6 +12,12 @@ export class Objektif{
     nama: string;
 
     @Prop()
+    start_date: string;
+
+    @Prop()
+    end_date: string;
+
+    @Prop()
     status: string;
 
     @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})

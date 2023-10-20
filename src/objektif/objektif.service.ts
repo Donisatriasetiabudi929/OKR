@@ -40,7 +40,7 @@ export class ObjektifService {
     }
 
     async createObjektif(createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
-        const { id_projek, nama } = createObjektifDto;
+        const { id_projek, nama, start_date, end_date } = createObjektifDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const existingObjektif = await this.objektifModel.findOne({ nama });
         if (existingObjektif) {
@@ -60,6 +60,8 @@ export class ObjektifService {
         const newObjektif = new this.objektifModel({
             id_projek,
             nama: nama1,
+            start_date,
+            end_date,
             status: "Progres"
         });
         await this.deleteCache(`003`);
@@ -74,7 +76,7 @@ export class ObjektifService {
 
     async updateObjektif(objektifId: string, createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
         const { nama, ...rest } = createObjektifDto;
-        const updateFields: any = { ...rest }; // Salin semua bidang ke objek pembaruan
+        const updateFields: any = { ...rest };
     
         if (nama) {
             updateFields.nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());

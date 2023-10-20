@@ -82,6 +82,7 @@ async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, 
     }
 
     @Delete('/:id')
+    @UseGuards(AuthGuard())
     async deleteUser(@Res() Response, @Param('id') userId: string) {
         try {
             // Dapatkan data uploud berdasarkan ID
