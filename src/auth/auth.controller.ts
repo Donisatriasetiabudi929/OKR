@@ -82,20 +82,21 @@ async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, 
     }
 
     @Delete('/:id')
-    @UseGuards(AuthGuard())
-    async deleteUser(@Res() Response, @Param('id') userId: string) {
-        try {
-            // Dapatkan data uploud berdasarkan ID
-            const deletedUser = await this.authService.deleteUser(userId);
-            return Response.status(HttpStatus.OK).json({
-                message: 'Berhasil hapus data uploud',
-                deletedUser
-            });
-        } catch (err) {
-            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-                message: 'Terjadi kesalahan saat menghapus data uploud'
-            });
-        }
+@UseGuards(AuthGuard())
+async deleteUser(@Res() Response, @Param('id') userId: string) {
+    try {
+        // Dapatkan data uploud berdasarkan ID
+        const deletedUser = await this.authService.deleteUser(userId);
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil hapus data uploud',
+            deletedUser
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: err.message || 'Terjadi kesalahan saat menghapus data uploud'
+        });
     }
+}
+
 }
 

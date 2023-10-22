@@ -215,6 +215,9 @@ export class AuthService {
         if (deletedprofile) {
             await this.deleteFile('okr.profile', deletedprofile.foto);
         }
+        else {
+            await this.deleteCache(`005`);
+        }
 
         await this.deleteCache(`005`);
         await this.deleteCache(`001`);
