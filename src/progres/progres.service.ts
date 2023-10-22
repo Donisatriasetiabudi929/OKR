@@ -206,8 +206,6 @@ export class ProgresService {
         await this.deleteCache(`006:pending`);
         await this.deleteCache(`006:approve`);
         await this.deleteCache(`006:keyresult:${progres.id_keyresult}`);
-
-
         return progres;
     }
 

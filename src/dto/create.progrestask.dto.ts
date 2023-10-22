@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class CreateTaskDto{
+export class CreateProgresTaskDto{
 
     @IsString()
     @IsNotEmpty()
@@ -21,14 +21,9 @@ export class CreateTaskDto{
 
     @IsString()
     @IsNotEmpty()
-    readonly nama: string;
+    readonly note: string;
 
-    @IsString()
-    @IsNotEmpty()
-    readonly deskripsi: string;
-
-    @IsString()
-    readonly file: string;
+    readonly files: Express.Multer.File;
 
     @IsString()
     readonly link: string;

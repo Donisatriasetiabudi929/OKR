@@ -5,10 +5,9 @@ export interface IProgrestask extends Document{
     readonly nama_profile: string;
     readonly foto_profile: string;
     readonly tanggal: string;
-    readonly nama: string;
-    readonly deskripsi: string;
-    readonly file: string;
+    note: string;
+    readonly files: string[];
     readonly link: string;
-    readonly status: string;
+    status: string;
 
 }

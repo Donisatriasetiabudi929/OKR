@@ -157,6 +157,8 @@ async updateTask(
 
     await updatedUploud.save();
     await this.deleteCache(`110`);
+    await this.deleteCache(`110:${taskId}`);
+    await this.deleteCache(`110:profile:${updatedUploud.assign_to}`);
     return updatedUploud;
 }
 
@@ -195,6 +197,22 @@ async getTask(taskId: string): Promise<ITask> {
         }
         await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingTask));
         return existingTask;
+    }
+}
+
+async getTaskByIdProfile(idProfile: string): Promise<ITask[]> {
+    const cacheKey = `110:profile:${idProfile}`;
+    const cachedData = await this.Redisclient.get(cacheKey);
+    if (cachedData) {
+        // Jika data tersedia di cache, parse data JSON dan kembalikan
+        return JSON.parse(cachedData);
+    } else {
+        const tasks = await this.taskModel.find({ assign_to: idProfile });
+        if (!tasks || tasks.length === 0) {
+            throw new NotFoundException(`Data task dengan assign_to #${idProfile} tidak ditemukan`);
+        }
+        await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(tasks));
+        return tasks;
     }
 }
 

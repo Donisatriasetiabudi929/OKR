@@ -20,13 +20,10 @@ export class Progrestask{
     tanggal: string;
 
     @Prop()
-    nama: string;
+    note: string;
 
-    @Prop()
-    deskripsi: string;
-
-    @Prop()
-    file: string;
+    @Prop([String])
+    files: string;
 
     @Prop()
     link: string;

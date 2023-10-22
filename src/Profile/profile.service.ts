@@ -8,6 +8,8 @@ import { IDivisi } from 'src/interface/divisi.interface';
 import { IKeyresult } from 'src/interface/keyresult.interface';
 import { IProfile } from 'src/interface/profile.interface';
 import { IProgres } from 'src/interface/progres.interface';
+import { IProgrestask } from 'src/interface/progrestask.interface';
+import { ITask } from 'src/interface/task.interface';
 import { User } from 'src/schema/user.schema';
 import { Readable } from 'stream';
 
@@ -22,6 +24,8 @@ export class ProfileService {
         @InjectModel('User') private userModel: Model<User>,
         @InjectModel('Progres') private progresModel: Model<IProgres>,
         @InjectModel('Keyresult') private readonly keyresultModel: Model<IKeyresult>,
+        @InjectModel('Task') private readonly taskModel: Model<ITask>,
+        @InjectModel('Progrestask') private readonly progrestaskModel: Model<IProgrestask>,
         @InjectModel('Divisi') private readonly divisiModel: Model<IDivisi>
         ) {
         //Untuk menghubungkan redis server
@@ -166,9 +170,26 @@ export class ProfileService {
                     foto_profile: updateProfile.foto
                 } }
             );
+
+            const taskData = await this.taskModel.updateMany(
+                { assign_to: profileId },
+                { $set: { 
+                    nama_profile: updateProfile.nama, 
+                    foto_profile: updateProfile.foto
+                } }
+            );
     
             // Update 'Progres' table
-            const cartData = await this.progresModel.updateMany(
+            const progres = await this.progresModel.updateMany(
+                { id_profile: profileId },
+                { $set: { 
+                    nama_profile: updateProfile.nama, 
+                    foto_profile: updateProfile.foto
+    
+                } }
+            );
+
+            const progresTask = await this.progrestaskModel.updateMany(
                 { id_profile: profileId },
                 { $set: { 
                     nama_profile: updateProfile.nama, 
@@ -177,7 +198,7 @@ export class ProfileService {
                 } }
             );
     
-            console.log(`Updated related data in 'suka' and 'cart' tables for produk with ID ${profileId}`);
+            console.log(`Updated related data in 'keyresultData, progres' and 'taskData, progresTask' tables for produk with ID ${profileId}`);
         } catch (error) {
             console.error(`Error updating related data: ${error}`);
             throw new Error('Terjadi kesalahan saat memperbarui data terkait');

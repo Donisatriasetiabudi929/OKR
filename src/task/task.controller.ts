@@ -189,6 +189,28 @@ async updateTask(
         }
     }
 
+    @Get('/profile/:id_profile')
+    async getTaskByIdProfile(@Param('id_profile') idProfile: string, @Res() Response) {
+        try {
+            const tasks = await this.taskService.getTaskByIdProfile(idProfile);
+
+            if (!tasks) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data Task tidak ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data Task berhasil ditemukan',
+                tasks
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data Task'
+            });
+        }
+    }
+
 
 
 }
