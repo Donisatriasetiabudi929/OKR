@@ -110,6 +110,8 @@ export class ProjekService {
     
         await this.updateCache();
         await this.deleteCache(`002:${updatedProjek.id}`);
+        await this.deleteCache(`002:draft`);
+        await this.deleteCache(`002:nondraft`);
         return updatedProjek;
     }
     
@@ -190,6 +192,8 @@ export class ProjekService {
                 }
                 await this.deleteCache(`004`);
                 await this.deleteCache(`002`);
+                await this.deleteCache(`002:draft`);
+                await this.deleteCache(`002:nondraft`);
                 await this.deleteCache(`003`);
                 await this.deleteCache(`003:${objek.id}`);
                 await this.deleteCache(`003:projek:${deletedProjek.id}`);

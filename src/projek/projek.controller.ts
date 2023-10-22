@@ -118,7 +118,7 @@ async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
     try {
         // Hapus projek berdasarkan ID
         await this.projekService.deleteProjek(projekId);
-
+        await this.projekService.deleteCache(`002`);
         return Response.status(HttpStatus.OK).json({
             message: 'Berhasil hapus data projek'
         });
