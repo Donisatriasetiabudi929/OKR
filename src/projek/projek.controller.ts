@@ -128,6 +128,78 @@ async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
         });
     }
 }
-    
+@Get('/status/draft')
+async getAllProjekDraft(@Res() Response) {
+    try {
+        const draftprojek = await this.projekService.getAllProjekByStatusDraft();
+
+        if (!draftprojek) {
+            return Response.status(HttpStatus.NOT_FOUND).json({
+                message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+            });
+        }
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
+            draftprojek
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
+        });
+    }
+}
+
+@Get('/non/draft')
+async getAllProjekNonDraft(@Res() Response) {
+    try {
+        const draftprojek = await this.projekService.GetAllProjekSelainDraft();
+
+        if (!draftprojek) {
+            return Response.status(HttpStatus.NOT_FOUND).json({
+                message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+            });
+        }
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
+            draftprojek
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
+        });
+    }
+}
+
+@Put('/status/:id_projek/draft')
+    @UseGuards(AuthGuard())
+    async approveProgres(
+        @Param('id_projek') id_projek: string,
+    ): Promise<any> {
+        try {
+            const updateProjekStatus = await this.projekService.moveDraftStatus(id_projek);
+            return { message: 'projek berhasil mengubah status ke Draft', updateProjekStatus };
+        } catch (error) {
+            console.error(`Error saat mengapprove progres: ${error}`);
+            throw new Error('Terjadi kesalahan saat mengapprove progres');
+        }
+    }
+
+    @Put('/public/:id_projek/up')
+    @UseGuards(AuthGuard())
+    async statusProjek(
+        @Param('id_projek') id_projek: string,
+    ): Promise<any> {
+        try {
+            const updatestatusprojek = await this.projekService.moveRealStatusProjek(id_projek);
+
+            return { message: 'projek berhasil Di UP', updatestatusprojek };
+        } catch (error) {
+            console.error(`Error saat UP projek: ${error}`);
+            throw new Error('Terjadi kesalahan saat UP projek');
+        }
+    }
+
 
 }

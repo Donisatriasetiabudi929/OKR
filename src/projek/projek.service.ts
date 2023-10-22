@@ -62,7 +62,7 @@ export class ProjekService {
             start_date,
             end_date,
             team: team || [],  
-            status: "Progress"
+            status: "Draft"
         });
         await this.deleteCache(`002`);
         return newProjek.save(); 
@@ -237,6 +237,92 @@ export class ProjekService {
             throw new Error('Terjadi kesalahan saat menghapus cache dari Redis');
         }
     }
+    async getAllProjekByStatusDraft(): Promise<IProjek[]> {
+        const cacheKey = '002:draft'; // Cache key baru untuk data pending
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        } else {
+            const DraftProjek = await this.projekModel.find({ status: 'Draft' }); // Filter berdasarkan status
+            if (!DraftProjek || DraftProjek.length === 0) {
+                throw new NotFoundException('Tidak ada data Progres task dengan status \'Draft\' ditemukan');
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(DraftProjek));
+            return DraftProjek;
+        }
+    }
+
+    async moveDraftStatus(id_projek: string): Promise<IProjek> {
+        const projek = await this.projekModel.findById(id_projek);
+
+        if (!projek) {
+            throw new NotFoundException(`projek dengan ID ${id_projek} tidak ditemukan!`);
+        }
+
+        if (projek.status == "Draft") {
+            throw new Error('Progres ini sudah di Draft');
+        }
+
+        projek.status = "Draft";
+
+        await projek.save();
+        await this.deleteCache(`002`);
+        await this.deleteCache(`002:draft`);
+        await this.deleteCache(`002:nondraft`);
+        return projek;
+    }
+
+    async moveRealStatusProjek(id_projek: string): Promise<IProjek> {
+        const projek = await this.projekModel.findById(id_projek);
+    
+        if (!projek) {
+            throw new NotFoundException(`projek dengan ID ${id_projek} tidak ditemukan!`);
+        }
+    
+        const keyresultsWithSameProjek = await this.keyresultModel.find({ id_projek: projek.id });
+        if (keyresultsWithSameProjek.length === 0) {
+            projek.status = "Progres"; // Jika tidak ada keyresult, ubah status menjadi "Progres"
+        } else {
+            const totalCurrentValues = keyresultsWithSameProjek.reduce((total, kr) => total + Number(kr.current_value), 0);
+    
+            // Membandingkan total current_value dengan total target_value
+            if (totalCurrentValues === keyresultsWithSameProjek.length * parseInt(keyresultsWithSameProjek[0].target_value)) {
+                projek.status = "Selesai"; // Mengubah status projek menjadi "Selesai"
+            } else {
+                projek.status = "Progres"; // Mengubah status projek menjadi "Progres"
+            }
+        }
+    
+        // Simpan projek setelah mengubah status
+        await projek.save();
+    
+        // Hapus cache setelah mengubah status projek
+        await this.deleteCache(`002`);
+        await this.deleteCache(`002:draft`);
+        await this.deleteCache(`002:nondraft`);
+    
+        return projek;
+    }
+    
+
+    async GetAllProjekSelainDraft(): Promise<IProjek[]> {
+        const cacheKey = '002:nondraft'; // Cache key baru untuk data pending
+        const cachedData = await this.Redisclient.get(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        } else {
+            const NonDraftProjek = await this.projekModel.find({ status: { $ne: 'Draft' } }); // Mengambil semua kecuali Draft
+            if (!NonDraftProjek || NonDraftProjek.length === 0) {
+                throw new NotFoundException('Tidak ada data Progres task dengan status selain \'Draft\' ditemukan');
+            }
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(NonDraftProjek));
+            return NonDraftProjek;
+        }
+    }
+    
+    
+    
+    
 
 
 }
