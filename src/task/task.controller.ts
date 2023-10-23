@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Param, Post, Put, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -211,6 +211,23 @@ async updateTask(
         }
     }
 
+
+    @Delete('/:id')
+@UseGuards(AuthGuard())
+async deleteTask(@Param('id') taskId: string, @Res() Response) {
+    try {
+        // Hapus task berdasarkan ID
+        await this.taskService.deleteTask(taskId);
+
+        return Response.status(HttpStatus.OK).json({
+            message: 'Berhasil hapus data task'
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat menghapus data task'
+        });
+    }
+}
 
 
 }

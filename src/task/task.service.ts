@@ -215,5 +215,37 @@ async getTaskByIdProfile(idProfile: string): Promise<ITask[]> {
         return tasks;
     }
 }
+async deleteTask(taskId: string): Promise<void> {
+    const deleteTask = await this.taskModel.findByIdAndDelete(taskId);
+
+    if (!deleteTask) {
+        throw new NotFoundException(`Keyresult dengan ID ${taskId} tidak tersedia!`);
+    }
+
+    const deleteprogres = await this.progrestaskModel.find({ id_task: taskId });
+
+    for (const progres of deleteprogres) {
+        if (progres.files && progres.files.length > 0) {
+            for (const file of progres.files) {
+                await this.deleteFile('okr.progrestask', file);
+            }
+        }
+    }
+
+    await this.progrestaskModel.deleteMany({ id_task: taskId });
+
+    // Hapus file jika ada
+    if (deleteTask.file) {
+        await this.deleteFile('okr.task', deleteTask.file);
+    }
+
+    await this.deleteCache(`110`);
+    await this.deleteCache(`120`);
+    await this.deleteCache(`110:${taskId}`);
+    await this.deleteCache(`110:profile:${deleteTask.assign_to}`);
+    await this.deleteCache(`120:pending`);
+    await this.deleteCache(`120:task:${deleteTask.id}`);
+}
+
 
 }

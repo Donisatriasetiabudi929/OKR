@@ -133,7 +133,7 @@ export class ProfileController {
                     namefilee,
                     bio.replace(/\b\w/g, (char) => char.toUpperCase()),
                     sosmed,
-                    quote
+                    quote.replace(/\b\w/g, (char) => char.toUpperCase())
                 );
                 updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
                 const stream = require('stream');
@@ -169,7 +169,7 @@ export class ProfileController {
                     uploudData.foto, // Gunakan nama file lama
                     bio.replace(/\b\w/g, (char) => char.toUpperCase()),
                     sosmed,
-                    quote
+                    quote.replace(/\b\w/g, (char) => char.toUpperCase())
                 );
 
                 updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());

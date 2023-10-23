@@ -52,9 +52,8 @@ export class ObjektifService {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
         if (projek.status === "Selesai") {
-            // Jika status projek adalah "Finish", maka ubah status keyresult menjadi "Progress"
-            projek.status = "Progress"; // Ubah status projek menjadi "Progress"
-            await projek.save(); // Simpan perubahan
+            projek.status = "Progress"; 
+            await projek.save(); 
         }
 
         const newObjektif = new this.objektifModel({
