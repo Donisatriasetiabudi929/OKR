@@ -115,7 +115,8 @@ export class ProfileController {
                     gender,
                     tanggal_lahir,
                     bio,
-                    sosmed
+                    sosmed,
+                    quote
                 } = createProfileDto;
                 const file = uploadeddFile.originalname;
                 // Generate 10 kode unik
@@ -131,7 +132,8 @@ export class ProfileController {
                     tanggal_lahir,
                     namefilee,
                     bio.replace(/\b\w/g, (char) => char.toUpperCase()),
-                    sosmed
+                    sosmed,
+                    quote
                 );
                 updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
                 const stream = require('stream');
@@ -153,7 +155,8 @@ export class ProfileController {
                     gender,
                     tanggal_lahir,
                     bio,
-                    sosmed
+                    sosmed,
+                    quote
                 } = createProfileDto;
                 const updatedUploud = await this.profileService.updateUploud(
                     uploudData._id,
@@ -165,7 +168,8 @@ export class ProfileController {
                     tanggal_lahir,
                     uploudData.foto, // Gunakan nama file lama
                     bio.replace(/\b\w/g, (char) => char.toUpperCase()),
-                    sosmed
+                    sosmed,
+                    quote
                 );
 
                 updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());

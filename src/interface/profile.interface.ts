@@ -10,5 +10,6 @@ export interface IProfile extends Document{
     readonly foto: string;
     bio: string;
     readonly sosmed: string[];
+    quote: string;
     readonly grade: string;
 }

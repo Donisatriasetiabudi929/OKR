@@ -104,6 +104,7 @@ export class ProfileService {
             foto: namaFile,
             bio,
             sosmed,
+            quote: "Ayo, Semangat Dalam Bekerja!",
             grade: '0'
         });
         newUploud.nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -215,7 +216,8 @@ export class ProfileService {
         tanggal_lahir: string,
         namefile: string,
         bio: string,
-        sosmed: string[]
+        sosmed: string[],
+        quote: string
     ): Promise<IProfile> {
         const updatedUploud = await this.profileModel.findByIdAndUpdate(
             uploudId,
@@ -228,12 +230,14 @@ export class ProfileService {
                 tanggal_lahir,
                 foto: namefile,
                 bio,
-                sosmed
+                sosmed,
+                quote
             },
             { new: true }
         );
         updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
         updatedUploud.bio = updatedUploud.bio.replace(/\b\w/g, (char) => char.toUpperCase());
+        updatedUploud.quote = updatedUploud.quote.replace(/\b\w/g, (char) => char.toUpperCase());
 
         if (!updatedUploud) {
             throw new NotFoundException(`Profil dengan ID ${uploudId} tidak ditemukan`);

@@ -34,6 +34,9 @@ export class Profile{
     @Prop()//Properti atau untuk menyebutkan fieldnya
     sosmed: string[];
 
+    @Prop()
+    quote: string;
+
     @Prop()//Properti atau untuk menyebutkan fieldnya
     grade: string;
 

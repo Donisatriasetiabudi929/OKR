@@ -39,6 +39,8 @@ export class CreateProfileDto{
 
     readonly sosmed: string[];
 
+    readonly quote: string;
+
     @IsString()
     readonly grade: string;
 
