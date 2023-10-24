@@ -190,6 +190,8 @@ export class ProgrestaskService {
 
         await progrestask.save();
         await task.save();
+        await this.deleteCache(`110`);
+        await this.deleteCache(`110:profile:${progrestask.id_profile}`);
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`120:task:${progrestask.id_task}`);
