@@ -205,6 +205,14 @@ export class KeyresultService {
             throw new Error('Gagal update keyresult (Target value kurang dari current value)');
 
         }
+        const kondisi2 = value_target === value_current;
+        if (kondisi2) {
+            const keyresult = await this.keyresultModel.findByIdAndUpdate(keyresultId);
+            if (keyresult) {
+                keyresult.status = "Selesai";
+                await keyresult.save();
+            }
+        }
         console.log("nilai target" + value_target);
         console.log("nilai current" + value_current);
         console.log(kondisi);

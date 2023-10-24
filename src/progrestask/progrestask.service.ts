@@ -124,11 +124,19 @@ export class ProgrestaskService {
             link,
             status: "Pending"
         });
+        const task = await this.taskModel.findById(newUploud.id_task);
+        if (!task) {
+            throw new NotFoundException(`Task dengan ID ${newUploud.id_task} tidak ditemukan!`);
+        }
+        task.status = "Pending"; // Mengubah status objek menjadi "Finish"
+        await task.save();
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`120:task:${newUploud.id_task}`);
         return newUploud.save();
     }
+
+    
 
     async getProfileByIdAuth(id_user: string): Promise<IProfile> {
         return this.profileModel.findOne({ id_user }).exec();
