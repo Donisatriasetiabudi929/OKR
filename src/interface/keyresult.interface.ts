@@ -8,7 +8,7 @@ export interface IKeyresult extends Document{
     readonly assign_to: string;
     readonly nama_profile: string;
     readonly foto_profile: string;
-    readonly target_value: string;
+    target_value: string;
     readonly days: string;
     current_value: number;
     status: string;

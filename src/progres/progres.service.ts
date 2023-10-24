@@ -167,14 +167,15 @@ export class ProgresService {
 
         // Cek apakah total current_value dari keyresult dengan id_objek yang sama mencapai target_value
         const keyresultsWithSameObjek = await this.keyresultModel.find({ id_objek: keyresult.id_objek });
-        const totalCurrentValues = keyresultsWithSameObjek.reduce((total) => total + Number(keyresult.current_value), 0);
-        console.log(keyresultsWithSameObjek);
-        console.log(totalCurrentValues);
+        const totalCurrentValues = keyresultsWithSameObjek.reduce((total, key) => total + Number(key.current_value), 0);
+
+        console.log('keyresultsWithSameObjek' + keyresultsWithSameObjek);
+        console.log('totalCurrentValues' + totalCurrentValues);
+        console.log('length' + keyresultsWithSameObjek.length * parseInt(keyresult.target_value));
         
         
         if (totalCurrentValues >= keyresultsWithSameObjek.length * parseInt(keyresult.target_value)) {
             const objek = await this.objekModel.findById(progres.id_objek);
-            console.log("data objek " + objek);
             if (!objek) {
                 throw new NotFoundException(`Objek dengan ID ${keyresult.id_objek} tidak ditemukan!`);
             }
@@ -182,7 +183,6 @@ export class ProgresService {
             await objek.save();
 
             const projek = await this.projekModel.findById(progres.id_projek);
-            console.log("data projek " + projek);
             if (!projek) {
                 throw new NotFoundException(`projek dengan ID ${keyresult.id_projek} tidak ditemukan!`);
             }

@@ -212,21 +212,21 @@ export class KeyresultService {
         // Jika target_value diubah, ubah status objektif menjadi "Progress"
         const objektif = await this.objektifModel.findById(updatedUploud.id_objek);
         if (objektif) {
-            objektif.status = "Progress";
+            objektif.status = "Progres";
             await objektif.save();
         }
         console.log(objektif);
 
         const projek = await this.projekModel.findById(updatedUploud.id_projek);
         if (projek) {
-            projek.status = "Progress";
+            projek.status = "Progres";
             await projek.save();
         }
         console.log(projek);
 
         const keyresult = await this.keyresultModel.findById(keyresultId);
         if (keyresult) {
-            keyresult.status = "Progress";
+            keyresult.status = "Progres";
             await keyresult.save();
         }
         console.log(keyresult);

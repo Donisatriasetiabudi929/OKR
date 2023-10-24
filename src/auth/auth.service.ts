@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -217,6 +217,7 @@ export class AuthService {
         }
         else {
             await this.deleteCache(`005`);
+            throw new HttpException('Berhasil menghapus data account', HttpStatus.OK); // Tambahkan pesan berhasil di sini
         }
 
         await this.deleteCache(`005`);
