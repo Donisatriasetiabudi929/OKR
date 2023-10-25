@@ -27,7 +27,7 @@ export class Progrestask{
 
     @Prop()
     link: string;
-
+    
     @Prop()
     status: string;
 

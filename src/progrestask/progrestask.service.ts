@@ -246,4 +246,35 @@ export class ProgrestaskService {
         }
         return existingprogrestask;
     }
+
+    async RejectProgresTask(id_progres: string): Promise<IProgrestask> {
+        const progrestask = await this.progrestaskModel.findById(id_progres);
+
+        if (!progrestask) {
+            throw new NotFoundException(`progrestask dengan ID ${id_progres} tidak ditemukan!`);
+        }
+
+        if (progrestask.status !== "Pending") {
+            throw new Error('Progres ini sudah di Approve atau Eeject');
+        }
+
+        progrestask.status = "Rejected";
+
+        const task = await this.taskModel.findById(progrestask.id_task);
+
+        if (!task) {
+            throw new NotFoundException(`Task dengan ID ${progrestask.id_task} tidak ditemukan!`);
+        }
+        task.status = "Rejected";
+
+        await progrestask.save();
+        await task.save();
+        await this.deleteCache(`110`);
+        await this.deleteCache(`110:profile:${progrestask.id_profile}`);
+        await this.deleteCache(`110:pending`);
+        await this.deleteCache(`120`);
+        await this.deleteCache(`120:pending`);
+        await this.deleteCache(`120:task:${progrestask.id_task}`);
+        return progrestask;
+    }
 }

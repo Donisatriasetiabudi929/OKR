@@ -214,6 +214,20 @@ export class ProgrestaskController {
         }
     }
 
+    @Put('/cancel/:id_progrestask/Reject')
+    @UseGuards(AuthGuard())
+    async rejectProgres(
+        @Param('id_progrestask') id_progrestask: string,
+    ): Promise<any> {
+        try {
+            const updatedProgres = await this.progrestaskService.RejectProgresTask(id_progrestask);
+            return { message: 'progrestask telah di reject', updatedProgres };
+        } catch (error) {
+            console.error(`Error saat mengreject progres: ${error}`);
+            throw new Error('Terjadi kesalahan saat mengreject progres');
+        }
+    }
+
     @Get('/status/pending')
     async getAllPendingProgrestask(@Res() Response) {
         try {
