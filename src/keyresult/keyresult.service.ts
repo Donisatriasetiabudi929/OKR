@@ -225,13 +225,18 @@ export class KeyresultService {
                 objek.status = "Selesai"; // Mengubah status objek menjadi "Finish"
                 await objek.save();
     
+                
                 const projek = await this.projekModel.findById(updatedUploud.id_projek);
                 if (!projek) {
                     throw new NotFoundException(`projek dengan ID ${updatedUploud.id_projek} tidak ditemukan!`);
                 }
-                projek.status = "Selesai"; // Mengubah status projek menjadi "Finish"
-                await projek.save();
-    
+                if(projek.status === "Draft"){
+                    projek.status= "Draft";
+                    await projek.save();
+                }else {
+                    projek.status = "Selesai";
+                    await projek.save();
+                }
             }
         } else {
             // Jika target_value diubah, ubah status objektif menjadi "Progress"
@@ -243,7 +248,10 @@ export class KeyresultService {
             console.log(objektif);
 
             const projek = await this.projekModel.findById(updatedUploud.id_projek);
-            if (projek) {
+            if(projek.status === "Draft"){
+                projek.status= "Draft";
+                await projek.save();
+            }else {
                 projek.status = "Progres";
                 await projek.save();
             }
