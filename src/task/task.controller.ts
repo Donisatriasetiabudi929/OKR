@@ -229,5 +229,27 @@ async deleteTask(@Param('id') taskId: string, @Res() Response) {
     }
 }
 
+@Get('/status/pending')
+    async getAllPendingTask(@Res() Response) {
+        try {
+            const pendingtask = await this.taskService.getAllpendingTask();
+
+            if (!pendingtask) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Tidak ada data  task dengan status \'Pending\' ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data  task dengan status \'Pending\' berhasil ditemukan',
+                pendingtask
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data  task dengan status \'Pending\''
+            });
+        }
+    }
+
 
 }

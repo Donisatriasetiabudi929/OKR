@@ -81,93 +81,95 @@ export class KeyresultController {
 
 
     @Put('/:id')
-    @UseGuards(AuthGuard())
-    @UseInterceptors(FileInterceptor('file'))
-    async updateKeyresult(
-        @Param('id') keyresultId: string,
-        @UploadedFile() file: Express.Multer.File,
-        @Body() updateKeyresultDto: CreateKeyresultDto,
-    ): Promise<any> {
-        try {
-            const {
-                id_projek,
-                id_objek,
-                nama,
-                link,
-                assign_to,
-                target_value,
-                days,
-                current_value,
-                status
-            } = updateKeyresultDto;
+@UseGuards(AuthGuard())
+@UseInterceptors(FileInterceptor('file'))
+async updateKeyresult(
+    @Param('id') keyresultId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() updateKeyresultDto: CreateKeyresultDto,
+): Promise<any> {
+    try {
+        const {
+            id_projek,
+            id_objek,
+            nama,
+            link,
+            assign_to,
+            target_value,
+            days,
+            current_value,
+            status
+        } = updateKeyresultDto;
 
-            let updatedFile = null;
-            let nama_profile = null;
-            let foto_profile = null;
+        let updatedFile = null;
+        let nama_profile = null;
+        let foto_profile = null;
 
-            if (file) {
-                const uniqueCode = randomBytes(10).toString('hex');
-                const objectName = `${uniqueCode}-${file.originalname}`;
+        if (file) {
+            const uniqueCode = randomBytes(10).toString('hex');
+            const objectName = `${uniqueCode}-${file.originalname}`;
 
-                const readableStream = new Readable();
-                readableStream.push(file.buffer);
-                readableStream.push(null);
+            const readableStream = new Readable();
+            readableStream.push(file.buffer);
+            readableStream.push(null);
 
-                await this.keyresultService.uploadFile('okr.keyresult', objectName, readableStream, file.mimetype);
+            await this.keyresultService.uploadFile('okr.keyresult', objectName, readableStream, file.mimetype);
 
-                const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
-                if (existingKeyresult && existingKeyresult.file) {
-                    await this.keyresultService.deleteFile('okr.keyresult', existingKeyresult.file);
-                }
-
-                updatedFile = objectName;
+            const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
+            if (existingKeyresult && existingKeyresult.file) {
+                await this.keyresultService.deleteFile('okr.keyresult', existingKeyresult.file);
             }
 
-            if (assign_to) {
-                const profile = await this.keyresultService.getProfileById(assign_to);
-            
-                if (profile) {
-                    nama_profile = profile.nama;
-                    foto_profile = profile.foto;
-                } else {
-                    throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
-                }
-            } else {
-                // Jika assign_to tidak diinputkan, pertahankan nilai sebelumnya
-                const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
-            
-                if (existingKeyresult) {
-                    nama_profile = existingKeyresult.nama_profile;
-                    foto_profile = existingKeyresult.foto_profile;
-                }
-            }
-
-            
-
-            const updatedResult = await this.keyresultService.updateKeyresult(
-                keyresultId,
-                id_projek,
-                id_objek,
-                nama,
-                updatedFile,
-                link,
-                assign_to,
-                nama_profile,
-                foto_profile,
-                target_value,
-                days,
-                current_value,
-                status
-            );
-
-            updatedResult.nama = updatedResult.nama.replace(/\b\w/g, (char) => char.toUpperCase());
-
-            return { message: 'Data berhasil diperbarui', updatedResult };
-        } catch (error) {
-            console.error(`Error saat memperbarui data keyresult: ${error}`);
-            throw new Error('Terjadi kesalahan saat memperbarui data keyresult');
+            updatedFile = objectName;
         }
+
+        if (assign_to) {
+            const profile = await this.keyresultService.getProfileById(assign_to);
+
+            if (profile) {
+                nama_profile = profile.nama;
+                foto_profile = profile.foto;
+            } else {
+                throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
+            }
+        } else {
+            // Jika assign_to tidak diinputkan, pertahankan nilai sebelumnya
+            const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
+
+            if (existingKeyresult) {
+                nama_profile = existingKeyresult.nama_profile;
+                foto_profile = existingKeyresult.foto_profile;
+            }
+        }
+
+        const updatedResult = await this.keyresultService.updateKeyresult(
+            keyresultId,
+            id_projek,
+            id_objek,
+            nama,
+            updatedFile,
+            link,
+            assign_to,
+            nama_profile,
+            foto_profile,
+            target_value,
+            days,
+            current_value,
+            status
+        );
+
+        // Tambahkan kondisi untuk memeriksa apakah target_value sama dengan current_value
+    
+
+        updatedResult.nama = updatedResult.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+
+        return { message: 'Data berhasil diperbarui', updatedResult };
+    } catch (error) {
+        console.error(`Error saat memperbarui data keyresult: ${error}`);
+        throw new Error('Terjadi kesalahan saat memperbarui data keyresult');
     }
+}
+
 
     @Get('/projek/:id_projek/values')
 async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {

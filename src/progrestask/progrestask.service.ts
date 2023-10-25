@@ -130,6 +130,7 @@ export class ProgrestaskService {
         }
         task.status = "Pending"; // Mengubah status objek menjadi "Finish"
         await task.save();
+        await this.deleteCache(`110:pending`);
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`120:task:${newUploud.id_task}`);
@@ -172,6 +173,7 @@ export class ProgrestaskService {
     
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
+        await this.deleteCache(`110:pending`);
         await this.deleteCache(`120:task:${updatedProgrestask.id_task}`);
         return updatedProgrestask;
     }
@@ -200,6 +202,7 @@ export class ProgrestaskService {
         await task.save();
         await this.deleteCache(`110`);
         await this.deleteCache(`110:profile:${progrestask.id_profile}`);
+        await this.deleteCache(`110:pending`);
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`120:task:${progrestask.id_task}`);

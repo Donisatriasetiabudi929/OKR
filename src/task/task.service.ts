@@ -105,6 +105,7 @@ async createTask(createTaskDto: CreateTaskDto): Promise<ITask> {
     });
 
     await this.deleteCache(`110`);
+    await this.deleteCache(`110:pending`);
 
     return newTask.save();
 }
@@ -158,6 +159,7 @@ async updateTask(
     await updatedUploud.save();
     await this.deleteCache(`110`);
     await this.deleteCache(`110:${taskId}`);
+    await this.deleteCache(`110:pending`);
     await this.deleteCache(`110:profile:${updatedUploud.assign_to}`);
     return updatedUploud;
 }
@@ -242,9 +244,25 @@ async deleteTask(taskId: string): Promise<void> {
     await this.deleteCache(`110`);
     await this.deleteCache(`120`);
     await this.deleteCache(`110:${taskId}`);
+    await this.deleteCache(`110:pending`);
     await this.deleteCache(`110:profile:${deleteTask.assign_to}`);
     await this.deleteCache(`120:pending`);
     await this.deleteCache(`120:task:${deleteTask.id}`);
+}
+
+async getAllpendingTask(): Promise<ITask[]> {
+    const cacheKey = '110:pending'; 
+    const cachedData = await this.Redisclient.get(cacheKey);
+    if (cachedData) {
+        return JSON.parse(cachedData);
+    } else {
+        const pendingtask = await this.taskModel.find({ status: 'Pending' }); // Filter berdasarkan status
+        if (!pendingtask || pendingtask.length === 0) {
+            throw new NotFoundException('Tidak ada data  task dengan status \'Pending\' ditemukan');
+        }
+        await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(pendingtask));
+        return pendingtask;
+    }
 }
 
 

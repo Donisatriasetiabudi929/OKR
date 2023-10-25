@@ -172,7 +172,7 @@ export class KeyresultService {
         }
 
         // Mengambil nilai current_value dari data keyresult
-        const currentValueFromDb = existingKeyresult.current_value;
+
         const updatedUploud = await this.keyresultModel.findByIdAndUpdate(
             keyresultId,
             {
@@ -186,8 +186,9 @@ export class KeyresultService {
                 foto_profile,
                 target_value,
                 days,
-                current_value,
+                current_value, // Pastikan status disimpan dengan benar
                 status
+
             },
             { new: true }
         );
@@ -198,6 +199,7 @@ export class KeyresultService {
 
         // Update nama to be capitalized
         updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        const currentValueFromDb = existingKeyresult.current_value;
         const value_target = parseInt(target_value);
         const value_current = currentValueFromDb;
         const kondisi = value_target < value_current;
@@ -205,39 +207,62 @@ export class KeyresultService {
             throw new Error('Gagal update keyresult (Target value kurang dari current value)');
 
         }
-        const kondisi2 = value_target === value_current;
-        if (kondisi2) {
-            const keyresult = await this.keyresultModel.findByIdAndUpdate(keyresultId);
+        console.log('data terget value yang diinput' + updatedUploud.target_value);
+        console.log('data current valuenya' + existingKeyresult.current_value);
+
+
+        if (parseInt(updatedUploud.target_value) === Number(existingKeyresult.current_value)) {
+            updatedUploud.status = "Selesai";
+            await updatedUploud.save();
+
+            const keyresultsWithSameObjek = await this.keyresultModel.find({ id_objek: updatedUploud.id_objek });
+            const totalCurrentValues = keyresultsWithSameObjek.reduce((total, key) => total + Number(key.current_value), 0);
+            if (totalCurrentValues >= keyresultsWithSameObjek.length * parseInt(updatedUploud.target_value)) {
+                const objek = await this.objektifModel.findById(updatedUploud.id_objek);
+                if (!objek) {
+                    throw new NotFoundException(`Objek dengan ID ${updatedUploud.id_objek} tidak ditemukan!`);
+                }
+                objek.status = "Selesai"; // Mengubah status objek menjadi "Finish"
+                await objek.save();
+    
+                const projek = await this.projekModel.findById(updatedUploud.id_projek);
+                if (!projek) {
+                    throw new NotFoundException(`projek dengan ID ${updatedUploud.id_projek} tidak ditemukan!`);
+                }
+                projek.status = "Selesai"; // Mengubah status projek menjadi "Finish"
+                await projek.save();
+    
+            }
+        } else {
+            // Jika target_value diubah, ubah status objektif menjadi "Progress"
+            const objektif = await this.objektifModel.findById(updatedUploud.id_objek);
+            if (objektif) {
+                objektif.status = "Progres";
+                await objektif.save();
+            }
+            console.log(objektif);
+
+            const projek = await this.projekModel.findById(updatedUploud.id_projek);
+            if (projek) {
+                projek.status = "Progres";
+                await projek.save();
+            }
+            console.log(projek);
+
+            const keyresult = await this.keyresultModel.findById(keyresultId);
             if (keyresult) {
-                keyresult.status = "Selesai";
+                keyresult.status = "Progres";
                 await keyresult.save();
             }
         }
+        existingKeyresult.current_value = current_value;
+
+
         console.log("nilai target" + value_target);
         console.log("nilai current" + value_current);
         console.log(kondisi);
 
-        // Jika target_value diubah, ubah status objektif menjadi "Progress"
-        const objektif = await this.objektifModel.findById(updatedUploud.id_objek);
-        if (objektif) {
-            objektif.status = "Progres";
-            await objektif.save();
-        }
-        console.log(objektif);
 
-        const projek = await this.projekModel.findById(updatedUploud.id_projek);
-        if (projek) {
-            projek.status = "Progres";
-            await projek.save();
-        }
-        console.log(projek);
-
-        const keyresult = await this.keyresultModel.findById(keyresultId);
-        if (keyresult) {
-            keyresult.status = "Progres";
-            await keyresult.save();
-        }
-        console.log(keyresult);
 
 
 
