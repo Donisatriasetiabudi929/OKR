@@ -17,12 +17,12 @@ export class ProjekService {
     private readonly Redisclient: Redis;
 
     constructor(
-        private configService: ConfigService, 
+        private configService: ConfigService,
         @InjectModel('Projek') private projekModel: Model<IProjek>,
         @InjectModel('Objektif') private objektifModel: Model<IObjektif>,
         @InjectModel('Keyresult') private keyresultModel: Model<IKeyresult>,
         @InjectModel('Progres') private progresModel: Model<IProgres>,
-        ){
+    ) {
         this.Redisclient = new Redis({
             port: 6379,
             host: '127.0.0.1',
@@ -40,9 +40,9 @@ export class ProjekService {
         });
     }
 
-    
+
     //Create Projek
-    async createProjek(createProjekDto: CreateProjekDto): Promise<IProjek>{
+    async createProjek(createProjekDto: CreateProjekDto): Promise<IProjek> {
         const { nama, deskripsi, start_date, end_date, team } = createProjekDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const desc = deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -50,89 +50,94 @@ export class ProjekService {
         if (new Set(team).size !== team.length) {
             throw new Error('Data team tidak boleh sama');
         }
-    
+
         const existingProjek = await this.projekModel.findOne({ nama });
         if (existingProjek) {
             throw new Error('Projek dengan nama tersebut sudah ada');
         }
-    
+
         const newProjek = new this.projekModel({
             nama: nama1,
             deskripsi: desc,
             start_date,
             end_date,
-            team: team || [],  
+            team: team || [],
             status: "Draft"
         });
         await this.deleteCache(`002`);
-        return newProjek.save(); 
+        return newProjek.save();
     }
-    
+
     //Update Projek
     async updateProjek(projekId: string, updateProjekDto: CreateProjekDto): Promise<IProjek> {
-        const { nama, deskripsi, start_date, end_date, team,  status } = updateProjekDto;
-        
+        const { nama, deskripsi, start_date, end_date, team, status } = updateProjekDto;
+
         const updateFields: any = {}; // Objek untuk menyimpan bidang yang akan diperbarui
-    
+
         if (nama) {
             updateFields.nama = nama.replace(/\b\w/g, char => char.toUpperCase());
         }
-    
+
         if (deskripsi) {
             updateFields.deskripsi = deskripsi.replace(/\b\w/g, char => char.toUpperCase());;
         }
-    
+
         if (start_date) {
             updateFields.start_date = start_date;
         }
-    
+
         if (end_date) {
             updateFields.end_date = end_date;
         }
-    
+
         if (team) {
             updateFields.team = team;
         }
-    
+
         if (status) {
             updateFields.status = status;
         }
-    
+
         const updatedProjek = await this.projekModel.findByIdAndUpdate(
             projekId,
             { $set: updateFields },
             { new: true }
         );
-    
+
         if (!updatedProjek) {
             throw new NotFoundException(`Projek dengan ID ${projekId} tidak ditemukan!`);
         }
-    
+
         await this.updateCache();
         await this.deleteCache(`002:${updatedProjek.id}`);
         await this.deleteCache(`002:draft`);
         await this.deleteCache(`002:nondraft`);
         return updatedProjek;
     }
-    
+
 
     //Show all projek
-    async getAllProjek():Promise<IProjek[]>{
+    async getAllProjek(): Promise<IProjek[]> {
         const cachedData = await this.Redisclient.get('002');
 
         if (cachedData) {
             return JSON.parse(cachedData);
         } else {
             const projekData = await this.projekModel.find()
-            if (!projekData || projekData.length == 0){
+            if (!projekData || projekData.length == 0) {
                 throw new NotFoundException('Data projek tidak ada!');
             }
             await this.Redisclient.setex('002', 3600, JSON.stringify(projekData));
             return projekData;
         }
     }
+    async getProjekCount(): Promise<number> {
+        const count = await this.projekModel.countDocuments();
+        return count;
+    }
 
-    async getProjek(projekId:string):Promise<IProjek>{
+
+    async getProjek(projekId: string): Promise<IProjek> {
         const cacheKey = `002:${projekId}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
@@ -140,10 +145,10 @@ export class ProjekService {
             return JSON.parse(cachedData);
         } else {
             const existingProjek = await this.projekModel.findById(projekId)
-            if (!existingProjek){
+            if (!existingProjek) {
                 throw new NotFoundException(`Projek dengan #${projekId} tidak tersedia`);
             }
-            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingProjek)); 
+            await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(existingProjek));
             return existingProjek;
         }
     }
@@ -159,33 +164,33 @@ export class ProjekService {
     //Delete Projek
     async deleteProjek(projekId: string): Promise<IProjek> {
         const deletedProjek = await this.projekModel.findByIdAndDelete(projekId);
-    
+
         if (!deletedProjek) {
             throw new NotFoundException(`Projek dengan ID ${projekId} tidak tersedia!`);
         }
-    
+
         const deletedObjek = await this.objektifModel.find({ id_projek: projekId });
         await this.objektifModel.deleteMany({ id_projek: projekId });
 
-    
+
         for (const objek of deletedObjek) {
             const deletedKeyresults = await this.keyresultModel.find({ id_objek: objek.id });
-    
+
             for (const deletedKeyresult of deletedKeyresults) {
                 const deleteProgres = await this.progresModel.find({ id_keyresult: deletedKeyresult.id });
-    
+
                 for (const progres of deleteProgres) {
                     if (progres.file) {
                         await this.deleteFile('okr.progres', progres.file);
                     }
                 }
-    
+
                 // Menghapus keyresult berdasarkan id_objek
                 await this.keyresultModel.deleteMany({ id_objek: objek.id });
-    
+
                 // Menghapus progres berdasarkan id_keyresult
                 await this.progresModel.deleteMany({ id_keyresult: deletedKeyresult.id });
-    
+
                 // Hapus file jika ada
                 if (deletedKeyresult.file) {
                     await this.deleteFile('okr.keyresult', deletedKeyresult.file);
@@ -212,11 +217,11 @@ export class ProjekService {
             await this.deleteCache(`004:projek:${deletedProjek.id}}`);
             await this.deleteCache(`004:objek:${objek.id}`);
         }
-    
+
         return deletedProjek;
-        
+
     }
-    
+
 
     async updateCache(): Promise<void> {
         try {
@@ -278,17 +283,17 @@ export class ProjekService {
 
     async moveRealStatusProjek(id_projek: string): Promise<IProjek> {
         const projek = await this.projekModel.findById(id_projek);
-    
+
         if (!projek) {
             throw new NotFoundException(`projek dengan ID ${id_projek} tidak ditemukan!`);
         }
-    
+
         const keyresultsWithSameProjek = await this.keyresultModel.find({ id_projek: projek.id });
         if (keyresultsWithSameProjek.length === 0) {
             projek.status = "Progres"; // Jika tidak ada keyresult, ubah status menjadi "Progres"
         } else {
             const totalCurrentValues = keyresultsWithSameProjek.reduce((total, kr) => total + Number(kr.current_value), 0);
-    
+
             // Membandingkan total current_value dengan total target_value
             if (totalCurrentValues === keyresultsWithSameProjek.length * parseInt(keyresultsWithSameProjek[0].target_value)) {
                 projek.status = "Selesai"; // Mengubah status projek menjadi "Selesai"
@@ -296,18 +301,18 @@ export class ProjekService {
                 projek.status = "Progres"; // Mengubah status projek menjadi "Progres"
             }
         }
-    
+
         // Simpan projek setelah mengubah status
         await projek.save();
-    
+
         // Hapus cache setelah mengubah status projek
         await this.deleteCache(`002`);
         await this.deleteCache(`002:draft`);
         await this.deleteCache(`002:nondraft`);
-    
+
         return projek;
     }
-    
+
 
     async GetAllProjekSelainDraft(): Promise<IProjek[]> {
         const cacheKey = '002:nondraft'; // Cache key baru untuk data pending
@@ -323,10 +328,10 @@ export class ProjekService {
             return NonDraftProjek;
         }
     }
-    
-    
-    
-    
+
+
+
+
 
 
 }

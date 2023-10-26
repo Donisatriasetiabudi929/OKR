@@ -298,5 +298,53 @@ async deleteKeyresult(@Param('id') keyresultId: string, @Res() Response) {
     }
 }
 
+@Get('/count/jumlah')
+    async getKeyresultCount(@Res() Response) {
+        try {
+            const count = await this.keyresultService.getKeyresultCount();
+            return Response.status(HttpStatus.OK).json({
+                message: `Jumlah keyresult: ${count}`,
+                count
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
+            });
+        }
+    }
+
+    @Get('/count/projek/:idProjek/progres')
+async getKeyresultCountByIdProjekAndStatus(@Param('idProjek') idProjek: string, @Res() Response) {
+    try {
+        const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatus(idProjek);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah keyresult dengan status "Progres" untuk projek ID "${idProjek}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
+        });
+    }
+}
+
+@Get('/count/projek/:idProjek/selesai')
+async getKeyresultCountByIdProjekAndStatusDoni(@Param('idProjek') idProjek: string, @Res() Response) {
+    try {
+        const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatusDone(idProjek);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah keyresult dengan status "Selesai" untuk projek ID "${idProjek}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
+        });
+    }
+}
+
+
 
 }

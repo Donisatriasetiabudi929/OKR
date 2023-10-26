@@ -256,6 +256,23 @@ export class ObjektifService {
         await this.deleteCache(`004:projek:${deletedObjek.id_projek}`);
         await this.deleteCache(`004:objek:${deletedObjek.id}`);
     }
+
+    async getObjektifCountByStatus(status: string): Promise<number> {
+        const count = await this.objektifModel.countDocuments({ status: status });
+        return count;
+    }
+
+    async getObjektifCountByIdProjek(idProjek: string): Promise<number> {
+        const count = await this.objektifModel.countDocuments({ id_projek: idProjek });
+        return count;
+    }
+
+    async getObjektifCountByIdProjekBySelesai(idProjek: string): Promise<number> {
+        const count = await this.objektifModel.countDocuments({ id_projek: idProjek, status: "Selesai" });
+        return count;
+    }
+    
+    
     
     
     

@@ -126,4 +126,72 @@ async deleteObjektif(@Param('id') objektifId: string, @Res() Response) {
     }
 }
 
+@Get('/count/progres')
+async getObjektifCountByStatusProgres(@Res() Response) {
+    try {
+        const status = "Progres";
+        const count = await this.objektifService.getObjektifCountByStatus(status);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah objektif dengan status "${status}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah objektif'
+        });
+    }
+}
+
+@Get('/count/selesai')
+async getObjektifCountByStatusSelesai(@Res() Response) {
+    try {
+        const status = "Selesai";
+        const count = await this.objektifService.getObjektifCountByStatus(status);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah objektif dengan status "${status}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah objektif'
+        });
+    }
+}
+
+@Get('/count/projek/:idProjek')
+async getObjektifCountByIdProjek(@Param('idProjek') idProjek: string, @Res() Response) {
+    try {
+        const count = await this.objektifService.getObjektifCountByIdProjek(idProjek);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah objektif dengan id_projek "${idProjek}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah objektif'
+        });
+    }
+}
+
+@Get('/count/projek/:idProjek/selesai')
+async getKeyresultCountByIdProjekAndStatusDoni(@Param('idProjek') idProjek: string, @Res() Response) {
+    try {
+        const count = await this.objektifService.getObjektifCountByIdProjekBySelesai(idProjek);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah Objektif dengan status "Selesai" untuk projek ID "${idProjek}": ${count}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah Objektif'
+        });
+    }
+}
+
+
+
 }

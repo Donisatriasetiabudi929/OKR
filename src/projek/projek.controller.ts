@@ -5,24 +5,24 @@ import { ProjekService } from './projek.service';
 
 @Controller('projek')
 export class ProjekController {
-    constructor(private readonly projekService: ProjekService){}
+    constructor(private readonly projekService: ProjekService) { }
 
 
     @Post()
     @UseGuards(AuthGuard())
     async createProjek(
-        @Res() Response, 
+        @Res() Response,
         @Body() createProjekDto: CreateProjekDto,
-    ){
+    ) {
         try {
             const modifiedDto = {
                 ...createProjekDto,
                 team: createProjekDto.team || []
             };
-    
+
             const newProjek = await this.projekService.createProjek(modifiedDto);
             return Response.status(HttpStatus.CREATED).json({
-                message: "Berhasil menambahkan data projek", 
+                message: "Berhasil menambahkan data projek",
                 newProjek
             });
 
@@ -48,19 +48,19 @@ export class ProjekController {
             }
         }
     }
-    
-    
+
+
 
 
     //Show adll Projek
     @Get()
-    async getProjeks(@Res() Response){
-        try{
+    async getProjeks(@Res() Response) {
+        try {
             const projekData = await this.projekService.getAllProjek();
             return Response.status(HttpStatus.OK).json({
                 message: 'Semua data projek berhasil ditemukan', projekData
             });
-        }catch(err){
+        } catch (err) {
             return Response.status(err.status).json(err.Response);
         }
     }
@@ -89,90 +89,90 @@ export class ProjekController {
 
     //Update projek endpoint
     @Put(':id')
-@UseGuards(AuthGuard())
-async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProjekDto: CreateProjekDto) {
-    try {
-        const updatedProjek = await this.projekService.updateProjek(projekId, updateProjekDto);
+    @UseGuards(AuthGuard())
+    async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProjekDto: CreateProjekDto) {
+        try {
+            const updatedProjek = await this.projekService.updateProjek(projekId, updateProjekDto);
 
-        return res.status(HttpStatus.OK).json({
-            message: `Projek dengan ID ${projekId} berhasil diperbarui.`,
-            updatedProjek,
-        });
-        await this.projekService.updateCache();
-    } catch (err) {
-        if (err instanceof NotFoundException) {
-            return res.status(HttpStatus.NOT_FOUND).json({
-                message: err.message,
+            return res.status(HttpStatus.OK).json({
+                message: `Projek dengan ID ${projekId} berhasil diperbarui.`,
+                updatedProjek,
             });
-        } else {
-            return res.status(HttpStatus.BAD_REQUEST).json({
-                message: 'Gagal memperbarui projek.',
+            await this.projekService.updateCache();
+        } catch (err) {
+            if (err instanceof NotFoundException) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    message: err.message,
+                });
+            } else {
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    message: 'Gagal memperbarui projek.',
+                });
+            }
+        }
+    }
+
+    @Delete('/:id')
+    @UseGuards(AuthGuard())
+    async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
+        try {
+            // Hapus projek berdasarkan ID
+            await this.projekService.deleteProjek(projekId);
+            await this.projekService.deleteCache(`002`);
+            return Response.status(HttpStatus.OK).json({
+                message: 'Berhasil hapus data projek'
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat menghapus data projek'
             });
         }
     }
-}
+    @Get('/status/draft')
+    async getAllProjekDraft(@Res() Response) {
+        try {
+            const draftprojek = await this.projekService.getAllProjekByStatusDraft();
 
-@Delete('/:id')
-@UseGuards(AuthGuard())
-async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
-    try {
-        // Hapus projek berdasarkan ID
-        await this.projekService.deleteProjek(projekId);
-        await this.projekService.deleteCache(`002`);
-        return Response.status(HttpStatus.OK).json({
-            message: 'Berhasil hapus data projek'
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat menghapus data projek'
-        });
-    }
-}
-@Get('/status/draft')
-async getAllProjekDraft(@Res() Response) {
-    try {
-        const draftprojek = await this.projekService.getAllProjekByStatusDraft();
+            if (!draftprojek) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+                });
+            }
 
-        if (!draftprojek) {
-            return Response.status(HttpStatus.NOT_FOUND).json({
-                message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
+                draftprojek
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
             });
         }
-
-        return Response.status(HttpStatus.OK).json({
-            message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
-            draftprojek
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
-        });
     }
-}
 
-@Get('/non/draft')
-async getAllProjekNonDraft(@Res() Response) {
-    try {
-        const draftprojek = await this.projekService.GetAllProjekSelainDraft();
+    @Get('/non/draft')
+    async getAllProjekNonDraft(@Res() Response) {
+        try {
+            const draftprojek = await this.projekService.GetAllProjekSelainDraft();
 
-        if (!draftprojek) {
-            return Response.status(HttpStatus.NOT_FOUND).json({
-                message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+            if (!draftprojek) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Tidak ada data Progres task dengan status \'draft\' ditemukan'
+                });
+            }
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
+                draftprojek
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
             });
         }
-
-        return Response.status(HttpStatus.OK).json({
-            message: 'Data Progres task dengan status \'draft\' berhasil ditemukan',
-            draftprojek
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat mengambil data Progres task dengan status \'draft\''
-        });
     }
-}
 
-@Put('/status/:id_projek/draft')
+    @Put('/status/:id_projek/draft')
     @UseGuards(AuthGuard())
     async approveProgres(
         @Param('id_projek') id_projek: string,
@@ -200,6 +200,22 @@ async getAllProjekNonDraft(@Res() Response) {
             throw new Error('Terjadi kesalahan saat UP projek');
         }
     }
+
+    @Get('/count/jumlah')
+    async getProjekCount(@Res() Response) {
+        try {
+            const count = await this.projekService.getProjekCount();
+            return Response.status(HttpStatus.OK).json({
+                message: `Jumlah projek: ${count}`,
+                count
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil jumlah projek'
+            });
+        }
+    }
+
 
 
 }

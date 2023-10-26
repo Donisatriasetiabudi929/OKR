@@ -466,5 +466,21 @@ export class KeyresultService {
         }
     }
 
+    async getKeyresultCount(): Promise<number> {
+        const count = await this.keyresultModel.countDocuments();
+        return count;
+    }
+
+    async getKeyresultCountByIdProjekAndStatus(idProjek: string): Promise<number> {
+        const count = await this.keyresultModel.countDocuments({ id_projek: idProjek, status: "Progres" });
+        return count;
+    }
+
+    async getKeyresultCountByIdProjekAndStatusDone(idProjek: string): Promise<number> {
+        const count = await this.keyresultModel.countDocuments({ id_projek: idProjek, status: "Selesai" });
+        return count;
+    }
+    
+
 
 }
