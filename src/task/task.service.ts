@@ -106,6 +106,7 @@ async createTask(createTaskDto: CreateTaskDto): Promise<ITask> {
 
     await this.deleteCache(`110`);
     await this.deleteCache(`110:pending`);
+    await this.deleteCache(`110:profile:${newTask.assign_to}`);
 
     return newTask.save();
 }

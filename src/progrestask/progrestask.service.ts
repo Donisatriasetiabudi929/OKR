@@ -132,6 +132,7 @@ export class ProgrestaskService {
         await task.save();
         await this.deleteCache(`110:pending`);
         await this.deleteCache(`120`);
+        await this.deleteCache(`110:profile:${task.assign_to}`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`120:task:${newUploud.id_task}`);
         return newUploud.save();
