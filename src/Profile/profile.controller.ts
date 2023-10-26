@@ -302,6 +302,25 @@ async getProfilesByDivisiId(@Param('divisiId') divisiId: string, @Res() Response
     }
 }
 
+@Get('/profile/divisi/:divisiId/count')
+async getProfilesCountByDivisiId(@Param('divisiId') divisiId: string, @Res() Response) {
+    try {
+        const count = await this.profileService.getProfilesCountByDivisiId(divisiId);
+
+        return Response.status(HttpStatus.OK).json({
+            message: `Jumlah profil dengan divisi ID ${divisiId}`,
+            count
+        });
+    } catch (err) {
+        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Terjadi kesalahan saat mengambil jumlah profile'
+        });
+    }
+}
+
+
+
+
 
 
 

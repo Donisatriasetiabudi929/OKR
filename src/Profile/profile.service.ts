@@ -321,7 +321,20 @@ export class ProfileService {
         
         const divisi = await this.divisiModel.findById({ id }).exec();
         return divisi;
-}
+    }
+
+    async getProfilesCountByDivisiId(divisiId: string): Promise<number> {
+        const divisi = await this.divisiModel.findById(divisiId);
+    
+        if (!divisi) {
+            throw new NotFoundException(`Tidak ada divisi dengan ID ${divisiId}`);
+        }
+    
+        const count = await this.profileModel.countDocuments({ divisi: divisi.nama });
+    
+        return count;
+    }
+    
     
     
     
