@@ -181,8 +181,22 @@ export class ProjekController {
             const updateProjekStatus = await this.projekService.moveDraftStatus(id_projek);
             return { message: 'projek berhasil mengubah status ke Draft', updateProjekStatus };
         } catch (error) {
-            console.error(`Error saat mengapprove progres: ${error}`);
-            throw new Error('Terjadi kesalahan saat mengapprove progres');
+            console.error(`Error saat mengubah status ke Draft: ${error}`);
+            throw new Error('Terjadi kesalahan saat mengubah status ke Draft');
+        }
+    }
+
+    @Put('/status/:id_projek/cancel')
+    @UseGuards(AuthGuard())
+    async CanceledProgres(
+        @Param('id_projek') id_projek: string,
+    ): Promise<any> {
+        try {
+            const updateProjekStatus = await this.projekService.canceledProjek(id_projek);
+            return { message: 'projek berhasil mengubah status ke Cancel', updateProjekStatus };
+        } catch (error) {
+            console.error(`Error saat mengubah status ke Cancel: ${error}`);
+            throw new Error('Terjadi kesalahan saat mengubah status ke Cancel');
         }
     }
 

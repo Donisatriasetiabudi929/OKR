@@ -281,6 +281,26 @@ export class ProjekService {
         return projek;
     }
 
+    async canceledProjek(id_projek: string): Promise<IProjek> {
+        const projek = await this.projekModel.findById(id_projek);
+
+        if (!projek) {
+            throw new NotFoundException(`projek dengan ID ${id_projek} tidak ditemukan!`);
+        }
+
+        if (projek.status == "Canceled") {
+            throw new Error('Progres ini sudah di Cancel');
+        }
+
+        projek.status = "Canceled";
+
+        await projek.save();
+        await this.deleteCache(`002`);
+        await this.deleteCache(`002:draft`);
+        await this.deleteCache(`002:nondraft`);
+        return projek;
+    }
+
     async moveRealStatusProjek(id_projek: string): Promise<IProjek> {
         const projek = await this.projekModel.findById(id_projek);
 
