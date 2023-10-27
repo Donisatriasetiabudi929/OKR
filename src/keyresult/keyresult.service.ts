@@ -287,6 +287,7 @@ export class KeyresultService {
         await this.deleteCache(`004:${updatedUploud.id}`);
         await this.deleteCache(`004:projek:${updatedUploud.id_projek}`);
         await this.deleteCache(`004:objek:${updatedUploud.id_objek}`);
+        await this.deleteCache(`002:nondraft`);
 
         return updatedUploud;
     }
