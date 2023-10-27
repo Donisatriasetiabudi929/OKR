@@ -1,46 +1,46 @@
-import {Prop,Schema,SchemaFactory} from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose from 'mongoose';
 import { User } from './user.schema';
 
 @Schema()
-export class Profile{
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+export class Profile {
+    @Prop()
     id_user: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     email: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     nama: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     divisi: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     notelpon: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     gender: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     tanggal_lahir: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     foto: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     bio: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     sosmed: string[];
 
     @Prop()
     quote: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     grade: string;
 
-    @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
     user: User;
 
 }

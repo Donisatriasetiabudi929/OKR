@@ -1,9 +1,9 @@
-import {Prop,Schema,SchemaFactory} from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose from 'mongoose';
 import { User } from './user.schema';
 
 @Schema()
-export class Task{
+export class Task {
     @Prop()
     nama: string;
 
@@ -34,7 +34,7 @@ export class Task{
     @Prop()
     status: string;
 
-    @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
     user: User;
 }
 

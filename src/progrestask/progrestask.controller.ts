@@ -28,7 +28,7 @@ export class ProgrestaskController {
 
             const uniqueCode = randomBytes(5).toString('hex');
 
-            let namaFiles = ["#"]; // Default value in case no files are uploaded
+            let namaFiles = ["#"];
 
             if (uploadedFiles && uploadedFiles.length > 0) {
                 const filesData = uploadedFiles.map((file, index) => {
@@ -121,13 +121,11 @@ export class ProgrestaskController {
             let namaFiles: string[] = progrestaskData.files;
 
             if (uploadedFiles && uploadedFiles.length > 0) {
-                // Delete old files
                 for (const fileName of progrestaskData.files) {
                     try {
                         await this.progrestaskService.deleteFile('okr.progrestask', fileName);
                     } catch (error) {
                         console.error(`Error saat menghapus file: ${error}`);
-                        // Handle error (you may choose to continue or throw an exception)
                     }
                 }
 
@@ -187,7 +185,7 @@ export class ProgrestaskController {
                 namaFiles,
                 createProgresTaskDto.link
             );
-            
+
 
             return response.status(HttpStatus.OK).json({
                 message: 'Data Progrestask berhasil diperbarui',

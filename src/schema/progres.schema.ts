@@ -41,7 +41,7 @@ export class Progres {
     link: string;
 
     @Prop()
-    
+    approve_time: string;
 
     @Prop()
     status: string;

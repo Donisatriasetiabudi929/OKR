@@ -73,21 +73,21 @@ export class ProgresGateway {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-    
+
             for (const data of uploudData) {
                 const idProfile = data.id_profile;
                 const notificationKey = `009:notif:${idProfile}`;
-                
+
                 const now = new Date();
                 const jam = now.getHours();
                 const menit = now.getMinutes();
                 const detik = now.getSeconds();
-    
+
                 const notification = {
                     for: `${data.id_profile}`,
                     content: `Selamat ${data.nama_profile}, Admin telah melakukan Approve progres mu pada pukul ${jam}:${menit}:${detik}`,
                 };
-    
+
                 // Simpan data dari database ke cache dan atur waktu kedaluwarsa
                 await this.Redisclient.setex(notificationKey, 3600, JSON.stringify(notification)); // 3600 detik = 1 jam
                 console.log(`Cache Redis (key ${notificationKey}) telah diperbarui dengan data terbaru dari MongoDB`);
@@ -97,6 +97,6 @@ export class ProgresGateway {
             throw new Error('Terjadi kesalahan saat memperbarui cache Redis');
         }
     }
-    
+
 
 }

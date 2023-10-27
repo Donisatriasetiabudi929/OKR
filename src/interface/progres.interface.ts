@@ -12,5 +12,6 @@ export interface IProgres extends Document {
     readonly total: number;
     file: string;
     readonly link: string;
+    approve_time: string;
     status: string;
 }

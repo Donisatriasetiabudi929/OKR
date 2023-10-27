@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class CreateProgresDto{
+export class CreateProgresDto {
 
     @IsString()
     readonly id_projek: string;
@@ -41,6 +41,8 @@ export class CreateProgresDto{
 
     @IsString()
     readonly link: string;
+
+    readonly approve_time: string;
 
     @IsString()
     readonly status: string;

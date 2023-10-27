@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class CreateKeyresultDto{
+export class CreateKeyresultDto {
     @IsString()
     readonly id_projek: string;
 
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly id_objek: string;
 
     @IsString()

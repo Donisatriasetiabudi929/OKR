@@ -1,9 +1,9 @@
-import {Prop,Schema,SchemaFactory} from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose from 'mongoose';
 import { User } from './user.schema';
 
 @Schema()
-export class Objektif{
+export class Objektif {
 
     @Prop()
     id_projek: string;
@@ -20,7 +20,7 @@ export class Objektif{
     @Prop()
     status: string;
 
-    @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
     user: User;
 }
 

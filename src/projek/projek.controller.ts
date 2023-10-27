@@ -52,7 +52,6 @@ export class ProjekController {
 
 
 
-    //Show adll Projek
     @Get()
     async getProjeks(@Res() Response) {
         try {
@@ -87,7 +86,6 @@ export class ProjekController {
         }
     }
 
-    //Update projek endpoint
     @Put(':id')
     @UseGuards(AuthGuard())
     async updateProjek(@Res() res, @Param('id') projekId: string, @Body() updateProjekDto: CreateProjekDto) {
@@ -116,7 +114,6 @@ export class ProjekController {
     @UseGuards(AuthGuard())
     async deleteObjektif(@Param('id') projekId: string, @Res() Response) {
         try {
-            // Hapus projek berdasarkan ID
             await this.projekService.deleteProjek(projekId);
             await this.projekService.deleteCache(`002`);
             return Response.status(HttpStatus.OK).json({

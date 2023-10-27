@@ -20,7 +20,7 @@ export class KeyresultController {
         @Body() createKeyresultDto: CreateKeyresultDto,
     ): Promise<any> {
         try {
-            let file = '#'; // Default value
+            let file = '#';
 
             if (uploadedFile) {
                 const uniqueCode = randomBytes(10).toString('hex');
@@ -81,126 +81,122 @@ export class KeyresultController {
 
 
     @Put('/:id')
-@UseGuards(AuthGuard())
-@UseInterceptors(FileInterceptor('file'))
-async updateKeyresult(
-    @Param('id') keyresultId: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() updateKeyresultDto: CreateKeyresultDto,
-): Promise<any> {
-    try {
-        const {
-            id_projek,
-            id_objek,
-            nama,
-            link,
-            assign_to,
-            target_value,
-            days,
-            current_value,
-            status
-        } = updateKeyresultDto;
+    @UseGuards(AuthGuard())
+    @UseInterceptors(FileInterceptor('file'))
+    async updateKeyresult(
+        @Param('id') keyresultId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body() updateKeyresultDto: CreateKeyresultDto,
+    ): Promise<any> {
+        try {
+            const {
+                id_projek,
+                id_objek,
+                nama,
+                link,
+                assign_to,
+                target_value,
+                days,
+                current_value,
+                status
+            } = updateKeyresultDto;
 
-        let updatedFile = null;
-        let nama_profile = null;
-        let foto_profile = null;
+            let updatedFile = null;
+            let nama_profile = null;
+            let foto_profile = null;
 
-        if (file) {
-            const uniqueCode = randomBytes(10).toString('hex');
-            const objectName = `${uniqueCode}-${file.originalname}`;
+            if (file) {
+                const uniqueCode = randomBytes(10).toString('hex');
+                const objectName = `${uniqueCode}-${file.originalname}`;
 
-            const readableStream = new Readable();
-            readableStream.push(file.buffer);
-            readableStream.push(null);
+                const readableStream = new Readable();
+                readableStream.push(file.buffer);
+                readableStream.push(null);
 
-            await this.keyresultService.uploadFile('okr.keyresult', objectName, readableStream, file.mimetype);
+                await this.keyresultService.uploadFile('okr.keyresult', objectName, readableStream, file.mimetype);
 
-            const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
-            if (existingKeyresult && existingKeyresult.file) {
-                await this.keyresultService.deleteFile('okr.keyresult', existingKeyresult.file);
+                const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
+                if (existingKeyresult && existingKeyresult.file) {
+                    await this.keyresultService.deleteFile('okr.keyresult', existingKeyresult.file);
+                }
+
+                updatedFile = objectName;
             }
 
-            updatedFile = objectName;
-        }
+            if (assign_to) {
+                const profile = await this.keyresultService.getProfileById(assign_to);
 
-        if (assign_to) {
-            const profile = await this.keyresultService.getProfileById(assign_to);
-
-            if (profile) {
-                nama_profile = profile.nama;
-                foto_profile = profile.foto;
+                if (profile) {
+                    nama_profile = profile.nama;
+                    foto_profile = profile.foto;
+                } else {
+                    throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
+                }
             } else {
-                throw new Error(`Profile dengan ID ${assign_to} tidak ditemukan!`);
-            }
-        } else {
-            // Jika assign_to tidak diinputkan, pertahankan nilai sebelumnya
-            const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
+                const existingKeyresult = await this.keyresultService.getKeyresultById(keyresultId);
 
-            if (existingKeyresult) {
-                nama_profile = existingKeyresult.nama_profile;
-                foto_profile = existingKeyresult.foto_profile;
+                if (existingKeyresult) {
+                    nama_profile = existingKeyresult.nama_profile;
+                    foto_profile = existingKeyresult.foto_profile;
+                }
             }
+
+            const updatedResult = await this.keyresultService.updateKeyresult(
+                keyresultId,
+                id_projek,
+                id_objek,
+                nama,
+                updatedFile,
+                link,
+                assign_to,
+                nama_profile,
+                foto_profile,
+                target_value,
+                days,
+                current_value,
+                status
+            );
+
+            updatedResult.nama = updatedResult.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+
+            return { message: 'Data berhasil diperbarui', updatedResult };
+        } catch (error) {
+            console.error(`Error saat memperbarui data keyresult: ${error}`);
+            throw new Error('Terjadi kesalahan saat memperbarui data keyresult');
         }
-
-        const updatedResult = await this.keyresultService.updateKeyresult(
-            keyresultId,
-            id_projek,
-            id_objek,
-            nama,
-            updatedFile,
-            link,
-            assign_to,
-            nama_profile,
-            foto_profile,
-            target_value,
-            days,
-            current_value,
-            status
-        );
-
-        // Tambahkan kondisi untuk memeriksa apakah target_value sama dengan current_value
-    
-
-        updatedResult.nama = updatedResult.nama.replace(/\b\w/g, (char) => char.toUpperCase());
-
-        return { message: 'Data berhasil diperbarui', updatedResult };
-    } catch (error) {
-        console.error(`Error saat memperbarui data keyresult: ${error}`);
-        throw new Error('Terjadi kesalahan saat memperbarui data keyresult');
     }
-}
 
 
     @Get('/projek/:id_projek/values')
-async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {
-    try {
-        const keyresults = await this.keyresultService.getKeyresultsByProjekId(idProjek);
+    async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() Response) {
+        try {
+            const keyresults = await this.keyresultService.getKeyresultsByProjekId(idProjek);
 
-        if (!keyresults) {
-            return Response.status(HttpStatus.NOT_FOUND).json({
-                message: 'Data keyresult tidak ditemukan'
+            if (!keyresults) {
+                return Response.status(HttpStatus.NOT_FOUND).json({
+                    message: 'Data keyresult tidak ditemukan'
+                });
+            }
+
+            let totalTargetValue = 0;
+            let totalCurrentValue = 0;
+
+            keyresults.forEach(keyresult => {
+                totalTargetValue += parseInt(keyresult.target_value);
+                totalCurrentValue += Number(keyresult.current_value);
+            });
+
+            return Response.status(HttpStatus.OK).json({
+                message: 'Total target_value dan current_value berhasil dihitung',
+                totalTargetValue,
+                totalCurrentValue
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat menghitung total target_value dan current_value'
             });
         }
-
-        let totalTargetValue = 0;
-        let totalCurrentValue = 0;
-
-        keyresults.forEach(keyresult => {
-            totalTargetValue += parseInt(keyresult.target_value);
-            totalCurrentValue += Number(keyresult.current_value);
-        });
-
-        return Response.status(HttpStatus.OK).json({
-            message: 'Total target_value dan current_value berhasil dihitung',
-            totalTargetValue,
-            totalCurrentValue
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat menghitung total target_value dan current_value'
-        });
     }
-}
 
 
     @Get()
@@ -282,23 +278,22 @@ async getKeyresultValuesByProjekId(@Param('id_projek') idProjek: string, @Res() 
     }
 
     @Delete('/:id')
-@UseGuards(AuthGuard())
-async deleteKeyresult(@Param('id') keyresultId: string, @Res() Response) {
-    try {
-        // Hapus keyresult berdasarkan ID
-        await this.keyresultService.deleteKeyresult(keyresultId);
+    @UseGuards(AuthGuard())
+    async deleteKeyresult(@Param('id') keyresultId: string, @Res() Response) {
+        try {
+            await this.keyresultService.deleteKeyresult(keyresultId);
 
-        return Response.status(HttpStatus.OK).json({
-            message: 'Berhasil hapus data keyresult'
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat menghapus data keyresult'
-        });
+            return Response.status(HttpStatus.OK).json({
+                message: 'Berhasil hapus data keyresult'
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat menghapus data keyresult'
+            });
+        }
     }
-}
 
-@Get('/count/jumlah')
+    @Get('/count/jumlah')
     async getKeyresultCount(@Res() Response) {
         try {
             const count = await this.keyresultService.getKeyresultCount();
@@ -314,36 +309,36 @@ async deleteKeyresult(@Param('id') keyresultId: string, @Res() Response) {
     }
 
     @Get('/count/projek/:idProjek/progres')
-async getKeyresultCountByIdProjekAndStatus(@Param('idProjek') idProjek: string, @Res() Response) {
-    try {
-        const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatus(idProjek);
+    async getKeyresultCountByIdProjekAndStatus(@Param('idProjek') idProjek: string, @Res() Response) {
+        try {
+            const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatus(idProjek);
 
-        return Response.status(HttpStatus.OK).json({
-            message: `Jumlah keyresult dengan status "Progres" untuk projek ID "${idProjek}": ${count}`,
-            count
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
-        });
+            return Response.status(HttpStatus.OK).json({
+                message: `Jumlah keyresult dengan status "Progres" untuk projek ID "${idProjek}": ${count}`,
+                count
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
+            });
+        }
     }
-}
 
-@Get('/count/projek/:idProjek/selesai')
-async getKeyresultCountByIdProjekAndStatusDoni(@Param('idProjek') idProjek: string, @Res() Response) {
-    try {
-        const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatusDone(idProjek);
+    @Get('/count/projek/:idProjek/selesai')
+    async getKeyresultCountByIdProjekAndStatusDoni(@Param('idProjek') idProjek: string, @Res() Response) {
+        try {
+            const count = await this.keyresultService.getKeyresultCountByIdProjekAndStatusDone(idProjek);
 
-        return Response.status(HttpStatus.OK).json({
-            message: `Jumlah keyresult dengan status "Selesai" untuk projek ID "${idProjek}": ${count}`,
-            count
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
-        });
+            return Response.status(HttpStatus.OK).json({
+                message: `Jumlah keyresult dengan status "Selesai" untuk projek ID "${idProjek}": ${count}`,
+                count
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat mengambil jumlah keyresult'
+            });
+        }
     }
-}
 
 
 

@@ -100,13 +100,12 @@ export class KeyresultService {
             throw new NotFoundException(`Objektif dengan ID ${id_objek} tidak ditemukan`);
         }
 
-        let newStatus = status; // Menyimpan status yang akan digunakan
+        let newStatus = status;
 
         if (objektif.status === "Selesai") {
-            // Jika status objektif adalah "Finish", maka ubah status keyresult menjadi "Progress"
             newStatus = "Progres";
-            objektif.status = "Progres"; // Ubah status objektif menjadi "Progress"
-            await objektif.save(); // Simpan perubahan
+            objektif.status = "Progres";
+            await objektif.save();
         }
 
         const projek = await this.projekModel.findById(id_projek);
@@ -114,10 +113,9 @@ export class KeyresultService {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
         if (projek.status === "Selesai") {
-            // Jika status projek adalah "Finish", maka ubah status keyresult menjadi "Progress"
             newStatus = "Progres";
-            projek.status = "Progres"; // Ubah status projek menjadi "Progress"
-            await projek.save(); // Simpan perubahan
+            projek.status = "Progres";
+            await projek.save();
         }
 
 
@@ -171,22 +169,20 @@ export class KeyresultService {
             throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak ditemukan`);
         }
 
-        // Mengambil nilai current_value dari data keyresult
-
         const updatedUploud = await this.keyresultModel.findByIdAndUpdate(
             keyresultId,
             {
                 id_projek,
                 id_objek,
                 nama,
-                file: filee || undefined,  // Set to undefined if filee is falsy
+                file: filee || undefined,
                 link,
                 assign_to,
                 nama_profile,
                 foto_profile,
                 target_value,
                 days,
-                current_value, // Pastikan status disimpan dengan benar
+                current_value,
                 status
 
             },
@@ -197,7 +193,6 @@ export class KeyresultService {
             throw new NotFoundException(`Keyresult dengan ID ${keyresultId} tidak ditemukan`);
         }
 
-        // Update nama to be capitalized
         updatedUploud.nama = updatedUploud.nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const currentValueFromDb = existingKeyresult.current_value;
         const value_target = parseInt(target_value);
@@ -222,24 +217,23 @@ export class KeyresultService {
                 if (!objek) {
                     throw new NotFoundException(`Objek dengan ID ${updatedUploud.id_objek} tidak ditemukan!`);
                 }
-                objek.status = "Selesai"; // Mengubah status objek menjadi "Finish"
+                objek.status = "Selesai";
                 await objek.save();
-    
-                
+
+
                 const projek = await this.projekModel.findById(updatedUploud.id_projek);
                 if (!projek) {
                     throw new NotFoundException(`projek dengan ID ${updatedUploud.id_projek} tidak ditemukan!`);
                 }
-                if(projek.status === "Draft"){
-                    projek.status= "Draft";
+                if (projek.status === "Draft") {
+                    projek.status = "Draft";
                     await projek.save();
-                }else {
+                } else {
                     projek.status = "Selesai";
                     await projek.save();
                 }
             }
         } else {
-            // Jika target_value diubah, ubah status objektif menjadi "Progress"
             const objektif = await this.objektifModel.findById(updatedUploud.id_objek);
             if (objektif) {
                 objektif.status = "Progres";
@@ -248,10 +242,10 @@ export class KeyresultService {
             console.log(objektif);
 
             const projek = await this.projekModel.findById(updatedUploud.id_projek);
-            if(projek.status === "Draft"){
-                projek.status= "Draft";
+            if (projek.status === "Draft") {
+                projek.status = "Draft";
                 await projek.save();
-            }else {
+            } else {
                 projek.status = "Progres";
                 await projek.save();
             }
@@ -271,12 +265,7 @@ export class KeyresultService {
         console.log(kondisi);
 
 
-
-
-
         await updatedUploud.save();
-
-        // Simpan perubahan ke database
 
         await this.deleteCache(`004`);
         await this.deleteCache(`002`);
@@ -316,7 +305,6 @@ export class KeyresultService {
         const cacheKey = `004:${keyresultId}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const existingKeyresult = await this.keyresultModel.findById(keyresultId)
@@ -332,7 +320,6 @@ export class KeyresultService {
         const cacheKey = `004:projek:${idProjek}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const keyresults = await this.keyresultModel.find({ id_projek: idProjek });
@@ -349,7 +336,6 @@ export class KeyresultService {
         const cacheKey = `004:objek:${idObjektif}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const keyresults = await this.keyresultModel.find({ id_objek: idObjektif });
@@ -367,8 +353,7 @@ export class KeyresultService {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
-            await this.Redisclient.setex('004', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            await this.Redisclient.setex('004', 3600, JSON.stringify(uploudData));
             console.log('Cache Redis (key 004) telah diperbarui dengan data terbaru dari MongoDB');
         } catch (error) {
             console.error(`Error saat memperbarui cache Redis (key 004): ${error}`);
@@ -402,12 +387,10 @@ export class KeyresultService {
 
         await this.progresModel.deleteMany({ id_keyresult: keyresultId });
 
-        // Hapus file jika ada
         if (deletedKeyresult.file) {
             await this.deleteFile('okr.keyresult', deletedKeyresult.file);
         }
 
-        // Memeriksa apakah total current_value mencapai target_value
         const objekId = deletedKeyresult.id_objek;
         const keyresults = await this.keyresultModel.find({ id_objek: objekId });
         let totalCurrentValue = 0;
@@ -419,7 +402,6 @@ export class KeyresultService {
         });
 
         if (totalCurrentValue >= totalTargetValue) {
-            // Jika totalCurrentValue >= totalTargetValue, ubah status objektif dan projek menjadi "Finish"
             const objektif = await this.objektifModel.findById(objekId);
             if (objektif) {
                 objektif.status = "Selesai";
@@ -442,7 +424,6 @@ export class KeyresultService {
             await this.deleteCache(`004:projek:${deletedKeyresult.id_projek}`);
             await this.deleteCache(`004:objek:${deletedKeyresult.id_objek}`);
         } else {
-            // Jika totalCurrentValue < totalTargetValue, ubah status objektif dan projek menjadi "Progress"
             const objektif = await this.objektifModel.findById(objekId);
             if (objektif) {
                 objektif.status = "Progres";
@@ -481,7 +462,7 @@ export class KeyresultService {
         const count = await this.keyresultModel.countDocuments({ id_projek: idProjek, status: "Selesai" });
         return count;
     }
-    
+
 
 
 }

@@ -7,7 +7,7 @@ import { User } from "src/schema/user.schema";
 
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy){
+export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         @InjectModel(User.name)
         private userModel: Model<User>,
@@ -30,14 +30,14 @@ export class JwtStrategy extends PassportStrategy(Strategy){
         if (!user) {
             throw new UnauthorizedException('Login terlebih dahulu untuk mendapatkan akses');
         }
-        
+
 
         //Kondisi jika Role user bukan admin
         if (user.role !== 'Admin') {
             throw new UnauthorizedException('Anda tidak memiliki izin akses sebagai Admin');
         }
 
-        
+
 
         //Menampilkan user
         return user;

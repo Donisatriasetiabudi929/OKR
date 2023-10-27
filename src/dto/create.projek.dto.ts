@@ -1,27 +1,27 @@
 import { IsNotEmpty, IsString } from "class-validator";
 
-export class CreateProjekDto{
+export class CreateProjekDto {
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly nama: string;
 
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly deskripsi: string;
 
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly start_date: string;
 
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly end_date: string;
 
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly team: string[];
 
-    
+
     readonly status: string;
 
 

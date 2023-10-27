@@ -5,18 +5,18 @@ import mongoose from "mongoose";
     timestamps: true,
 })
 
-export class User{
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+export class User {
+    @Prop()
     name: string;
 
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+    @Prop()
     password: string;
-    
-    
-    @Prop()//Properti atau untuk menyebutkan fieldnya
+
+
+    @Prop()
     role: string;
 
-    @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
     user: User;
 }
 

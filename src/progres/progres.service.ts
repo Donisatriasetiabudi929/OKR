@@ -11,13 +11,13 @@ import { Readable } from 'stream';
 import { CreateProgresDto } from 'src/dto/create.progres.dto';
 import { IObjektif } from 'src/interface/objektif.interface';
 import { IProjek } from 'src/interface/projek.interface';
-
-
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class ProgresService {
     private readonly Redisclient: Redis;
     private minioClient: Minio.Client;
+
     constructor(private configService: ConfigService, @InjectModel('Progres') private progresModel: Model<IProgres>,
         @InjectModel('Profile') private readonly profileModel: Model<IProfile>,
         @InjectModel('Keyresult') private readonly keyresultModel: Model<IKeyresult>,
@@ -89,7 +89,7 @@ export class ProgresService {
     }
 
     async createProgres(createProgresDto: CreateProgresDto): Promise<IProgres> {
-        const { id_projek, id_objek, id_keyresult, id_profile, nama_profile, foto_profile, tanggal, nama, deskripsi, total, file, link, status } = createProgresDto;
+        const { id_projek, id_objek, id_keyresult, id_profile, nama_profile, foto_profile, tanggal, nama, deskripsi, total, file, link, approve_time, status } = createProgresDto;
         const nama1 = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         const desc = deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
         const existingProgres = await this.progresModel.findOne({ nama });
@@ -117,6 +117,7 @@ export class ProgresService {
             total,
             file,
             link,
+            approve_time: "0",
             status: "Pending"
         });
         await this.deleteCache(`006`);
@@ -147,8 +148,11 @@ export class ProgresService {
         if (progres.status !== "Pending") {
             throw new Error('Progres ini sudah diapprove atau reject');
         }
-
         progres.status = "Approve";
+        const approveTime = new Date(Date.now());
+        const localTimeString = approveTime.toLocaleString();
+        progres.approve_time = localTimeString.toString();
+
 
         const keyresult = await this.keyresultModel.findById(progres.id_keyresult);
 
@@ -156,37 +160,36 @@ export class ProgresService {
             throw new NotFoundException(`Keyresult dengan ID ${progres.id_keyresult} tidak ditemukan!`);
         }
 
-        keyresult.current_value += progres.total; // Menggunakan progres.total
+        keyresult.current_value += progres.total;
 
         if (Number(keyresult.current_value) >= parseInt(keyresult.target_value)) {
-            keyresult.status = "Selesai"; // Mengubah status menjadi "Finish"
+            keyresult.status = "Selesai";
         }
 
         await progres.save();
         await keyresult.save();
 
-        // Cek apakah total current_value dari keyresult dengan id_objek yang sama mencapai target_value
         const keyresultsWithSameObjek = await this.keyresultModel.find({ id_objek: keyresult.id_objek });
         const totalCurrentValues = keyresultsWithSameObjek.reduce((total, key) => total + Number(key.current_value), 0);
 
         console.log('keyresultsWithSameObjek' + keyresultsWithSameObjek);
         console.log('totalCurrentValues' + totalCurrentValues);
         console.log('length' + keyresultsWithSameObjek.length * parseInt(keyresult.target_value));
-        
-        
+
+
         if (totalCurrentValues >= keyresultsWithSameObjek.length * parseInt(keyresult.target_value)) {
             const objek = await this.objekModel.findById(progres.id_objek);
             if (!objek) {
                 throw new NotFoundException(`Objek dengan ID ${keyresult.id_objek} tidak ditemukan!`);
             }
-            objek.status = "Selesai"; // Mengubah status objek menjadi "Finish"
+            objek.status = "Selesai";
             await objek.save();
 
             const projek = await this.projekModel.findById(progres.id_projek);
             if (!projek) {
                 throw new NotFoundException(`projek dengan ID ${keyresult.id_projek} tidak ditemukan!`);
             }
-            projek.status = "Selesai"; // Mengubah status projek menjadi "Finish"
+            projek.status = "Selesai";
             await projek.save();
 
         }
@@ -209,10 +212,7 @@ export class ProgresService {
         return progres;
     }
 
-    // Di dalam progresService
-
     async getPendingProgresByStatusAndKeyresult(idKeyresult: string): Promise<IProgres[]> {
-        // Misalnya, Progres adalah model dari data progres
         const pendingProgres = await this.progresModel.find({ status: 'Pending', id_keyresult: idKeyresult }).exec();
         return pendingProgres;
     }
@@ -221,7 +221,6 @@ export class ProgresService {
         const cacheKey = `006:keyresult:${idKeyresult}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const keyresults = await this.progresModel.find({ id_keyresult: idKeyresult });
@@ -234,12 +233,12 @@ export class ProgresService {
     }
 
     async getAllPendingProgres(): Promise<IProgres[]> {
-        const cacheKey = '006:pending'; // Cache key baru untuk data pending
+        const cacheKey = '006:pending';
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
             return JSON.parse(cachedData);
         } else {
-            const pendingProgres = await this.progresModel.find({ status: 'Pending' }); // Filter berdasarkan status
+            const pendingProgres = await this.progresModel.find({ status: 'Pending' });
             if (!pendingProgres || pendingProgres.length === 0) {
                 throw new NotFoundException('Tidak ada data Progres dengan status \'Pending\' ditemukan');
             }
@@ -249,12 +248,12 @@ export class ProgresService {
     }
 
     async getAllApproveProgres(): Promise<IProgres[]> {
-        const cacheKey = '006:approve'; // Cache key baru untuk data pending
+        const cacheKey = '006:approve';
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
             return JSON.parse(cachedData);
         } else {
-            const pendingProgres = await this.progresModel.find({ status: 'Approve' }); // Filter berdasarkan status
+            const pendingProgres = await this.progresModel.find({ status: 'Approve' });
             if (!pendingProgres || pendingProgres.length === 0) {
                 throw new NotFoundException('Tidak ada data Progres dengan status \'Approve\' ditemukan');
             }
@@ -269,8 +268,7 @@ export class ProgresService {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
-            await this.Redisclient.setex('006:pending', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            await this.Redisclient.setex('006:pending', 3600, JSON.stringify(uploudData));
             console.log('Cache Redis (key 006) telah diperbarui dengan data terbaru dari MongoDB');
         } catch (error) {
             console.error(`Error saat memperbarui cache Redis (key 006): ${error}`);
@@ -284,8 +282,7 @@ export class ProgresService {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
-            await this.Redisclient.setex('006:approve', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            await this.Redisclient.setex('006:approve', 3600, JSON.stringify(uploudData));
             console.log('Cache Redis (key 006) telah diperbarui dengan data terbaru dari MongoDB');
         } catch (error) {
             console.error(`Error saat memperbarui cache Redis (key 006): ${error}`);
@@ -296,61 +293,60 @@ export class ProgresService {
 
     async updateProgres(
         progresId: string,
-            nama: string,
-            deskripsi: string,
-            filee: string,
-            link: string
-        ): Promise<IProgres> {
-            const updateProgres = await this.progresModel.findByIdAndUpdate(
-                progresId,
-                {
-                    nama,
-                    deskripsi,
-                    file: filee || undefined,  // Set to undefined if filee is falsy
-                    link
-                },
-                { new: true }
-            );
-        
-            if (!updateProgres) {
-                throw new NotFoundException(`Progres dengan ID ${progresId} tidak ditemukan`);
-            }
-        
-            // Update nama to be capitalized
-            updateProgres.nama = updateProgres.nama.replace(/\b\w/g, (char) => char.toUpperCase());
-            updateProgres.deskripsi = updateProgres.deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
-            await updateProgres.save();
+        nama: string,
+        deskripsi: string,
+        filee: string,
+        link: string
+    ): Promise<IProgres> {
+        const updateProgres = await this.progresModel.findByIdAndUpdate(
+            progresId,
+            {
+                nama,
+                deskripsi,
+                file: filee || undefined,
+                link
+            },
+            { new: true }
+        );
 
-            await this.updateCache();
-            await this.updateCacheApprove();
-            await this.deleteCache(`006`);
-            await this.deleteCache(`006:pending`);
-            await this.deleteCache(`006:approve`);
-            await this.deleteCache(`006:keyresult:${updateProgres.id_keyresult}`);
-            
-            return updateProgres;
+        if (!updateProgres) {
+            throw new NotFoundException(`Progres dengan ID ${progresId} tidak ditemukan`);
         }
 
-        async getProgresById(progresId: string): Promise<IProgres | null> {
-            return this.progresModel.findById(progresId).exec();
-        }
+        updateProgres.nama = updateProgres.nama.replace(/\b\w/g, (char) => char.toUpperCase());
+        updateProgres.deskripsi = updateProgres.deskripsi.replace(/\b\w/g, (char) => char.toUpperCase());
+        await updateProgres.save();
+
+        await this.updateCache();
+        await this.updateCacheApprove();
+        await this.deleteCache(`006`);
+        await this.deleteCache(`006:pending`);
+        await this.deleteCache(`006:approve`);
+        await this.deleteCache(`006:keyresult:${updateProgres.id_keyresult}`);
+
+        return updateProgres;
+    }
+
+    async getProgresById(progresId: string): Promise<IProgres | null> {
+        return this.progresModel.findById(progresId).exec();
+    }
 
 
-        async getProgres(progresId:string):Promise<IProgres>{
-            const existingProgres = await this.progresModel.findById(progresId)
-            if (!existingProgres){
-                throw new NotFoundException(`Siswa dengan #${progresId} tidak tersedia`);
-            }
-            return existingProgres;
+    async getProgres(progresId: string): Promise<IProgres> {
+        const existingProgres = await this.progresModel.findById(progresId)
+        if (!existingProgres) {
+            throw new NotFoundException(`Siswa dengan #${progresId} tidak tersedia`);
         }
+        return existingProgres;
+    }
 
-        async getApprovedProgresByProfileId(idProfile: string): Promise<IProgres[]> {
-            const approvedProgres = await this.progresModel.find({ id_profile: idProfile, status: 'Approve' })
-                .sort({ tanggal: -1 }) // Ganti 'tanggal' dengan nama kolom tanggal Anda
-                .exec();
-            return approvedProgres;
-        }
-        
+    async getApprovedProgresByProfileId(idProfile: string): Promise<IProgres[]> {
+        const approvedProgres = await this.progresModel.find({ id_profile: idProfile, status: 'Approve' })
+            .sort({ tanggal: -1 })
+            .exec();
+        return approvedProgres;
+    }
+
 
 
 }

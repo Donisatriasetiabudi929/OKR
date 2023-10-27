@@ -19,7 +19,7 @@ export class AuthController {
     }
 
 
-    
+
 
     @Get('/all')
     async getUplouds(@Res() Response) {
@@ -35,20 +35,20 @@ export class AuthController {
 
     @Put('/:id')
     @UseGuards(AuthGuard())
-async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Res() Response) {
-    try {
-        const updatedUser = await this.authService.updateUserById(id, updateUserDto);
+    async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Res() Response) {
+        try {
+            const updatedUser = await this.authService.updateUserById(id, updateUserDto);
 
-        return Response.status(HttpStatus.OK).json({
-            message: 'Data user berhasil diperbarui',
-            user: updatedUser
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: 'Terjadi kesalahan saat memperbarui data user'
-        });
+            return Response.status(HttpStatus.OK).json({
+                message: 'Data user berhasil diperbarui',
+                user: updatedUser
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Terjadi kesalahan saat memperbarui data user'
+            });
+        }
     }
-}
 
 
 
@@ -82,21 +82,20 @@ async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, 
     }
 
     @Delete('/:id')
-@UseGuards(AuthGuard())
-async deleteUser(@Res() Response, @Param('id') userId: string) {
-    try {
-        // Dapatkan data uploud berdasarkan ID
-        const deletedUser = await this.authService.deleteUser(userId);
-        return Response.status(HttpStatus.OK).json({
-            message: 'Berhasil hapus data uploud',
-            deletedUser
-        });
-    } catch (err) {
-        return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-            message: err.message || 'Terjadi kesalahan saat menghapus data uploud'
-        });
+    @UseGuards(AuthGuard())
+    async deleteUser(@Res() Response, @Param('id') userId: string) {
+        try {
+            const deletedUser = await this.authService.deleteUser(userId);
+            return Response.status(HttpStatus.OK).json({
+                message: 'Berhasil hapus data uploud',
+                deletedUser
+            });
+        } catch (err) {
+            return Response.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: err.message || 'Terjadi kesalahan saat menghapus data uploud'
+            });
+        }
     }
-}
 
 }
 

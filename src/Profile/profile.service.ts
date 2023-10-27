@@ -19,15 +19,15 @@ export class ProfileService {
     private minioClient: Minio.Client;
     AuthService: any;
 
-    constructor(private configService: ConfigService, 
-        @InjectModel('Profile') private profileModel: Model<IProfile>, 
+    constructor(private configService: ConfigService,
+        @InjectModel('Profile') private profileModel: Model<IProfile>,
         @InjectModel('User') private userModel: Model<User>,
         @InjectModel('Progres') private progresModel: Model<IProgres>,
         @InjectModel('Keyresult') private readonly keyresultModel: Model<IKeyresult>,
         @InjectModel('Task') private readonly taskModel: Model<ITask>,
         @InjectModel('Progrestask') private readonly progrestaskModel: Model<IProgrestask>,
         @InjectModel('Divisi') private readonly divisiModel: Model<IDivisi>
-        ) {
+    ) {
         //Untuk menghubungkan redis server
         this.Redisclient = new Redis({
             port: 6379,
@@ -72,7 +72,6 @@ export class ProfileService {
         }
     }
 
-    // ...
 
     async createUploud(
         id_user: string,
@@ -121,8 +120,7 @@ export class ProfileService {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
-            await this.Redisclient.setex('001', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
+            await this.Redisclient.setex('001', 3600, JSON.stringify(uploudData));
             console.log('Cache Redis (key 001) telah diperbarui dengan data terbaru dari MongoDB');
         } catch (error) {
             console.error(`Error saat memperbarui cache Redis (key 001): ${error}`);
@@ -133,9 +131,9 @@ export class ProfileService {
 
 
     async getProfileByIdAuth(id_user: string): Promise<IProfile> {
-        
-            const tampil = await this.profileModel.findOne({ id_user }).exec();
-            return tampil;
+
+        const tampil = await this.profileModel.findOne({ id_user }).exec();
+        return tampil;
     }
 
     async deleteCache(key: string): Promise<void> {
@@ -163,42 +161,48 @@ export class ProfileService {
 
     async updateRelatedDataByprofileId(profileId: string, updateProfile: IProfile): Promise<void> {
         try {
-            // Update 'keyresult' table
             const keyresultData = await this.keyresultModel.updateMany(
                 { assign_to: profileId },
-                { $set: { 
-                    nama_profile: updateProfile.nama, 
-                    foto_profile: updateProfile.foto
-                } }
+                {
+                    $set: {
+                        nama_profile: updateProfile.nama,
+                        foto_profile: updateProfile.foto
+                    }
+                }
             );
 
             const taskData = await this.taskModel.updateMany(
                 { assign_to: profileId },
-                { $set: { 
-                    nama_profile: updateProfile.nama, 
-                    foto_profile: updateProfile.foto
-                } }
+                {
+                    $set: {
+                        nama_profile: updateProfile.nama,
+                        foto_profile: updateProfile.foto
+                    }
+                }
             );
-    
-            // Update 'Progres' table
+
             const progres = await this.progresModel.updateMany(
                 { id_profile: profileId },
-                { $set: { 
-                    nama_profile: updateProfile.nama, 
-                    foto_profile: updateProfile.foto
-    
-                } }
+                {
+                    $set: {
+                        nama_profile: updateProfile.nama,
+                        foto_profile: updateProfile.foto
+
+                    }
+                }
             );
 
             const progresTask = await this.progrestaskModel.updateMany(
                 { id_profile: profileId },
-                { $set: { 
-                    nama_profile: updateProfile.nama, 
-                    foto_profile: updateProfile.foto
-    
-                } }
+                {
+                    $set: {
+                        nama_profile: updateProfile.nama,
+                        foto_profile: updateProfile.foto
+
+                    }
+                }
             );
-    
+
             console.log(`Updated related data in 'keyresultData, progres' and 'taskData, progresTask' tables for produk with ID ${profileId}`);
         } catch (error) {
             console.error(`Error updating related data: ${error}`);
@@ -245,15 +249,11 @@ export class ProfileService {
 
         await this.updateRelatedDataByprofileId(uploudId, updatedUploud);
 
-        // Perbarui cache untuk data profil
         await this.updateCache();
         await this.deleteCache(`001:${updatedUploud.id_user}`);
 
         return updatedUploud;
     }
-
-    // ...
-
 
 
     async deleteFile(bucketName: string, objectName: string): Promise<void> {
@@ -266,7 +266,7 @@ export class ProfileService {
         }
     }
 
-    
+
 
     async deleteProfile(profileId: string): Promise<IProfile> {
         const deletedProfile = await this.profileModel.findByIdAndDelete(profileId);
@@ -293,9 +293,9 @@ export class ProfileService {
         }
     }
 
-    async getProfileById(profileId:string):Promise<IProfile>{
+    async getProfileById(profileId: string): Promise<IProfile> {
         const existingProfile = await this.profileModel.findById(profileId)
-        if (!existingProfile){
+        if (!existingProfile) {
             throw new NotFoundException(`Profile dengan #${profileId} tidak tersedia`);
         }
         return existingProfile;
@@ -303,41 +303,41 @@ export class ProfileService {
 
     async getProfilesByDivisiId(divisiId: string): Promise<IProfile[]> {
         const divisi = await this.divisiModel.findById(divisiId);
-    
+
         if (!divisi) {
             throw new NotFoundException(`Tidak ada divisi dengan ID ${divisiId}`);
         }
-    
+
         const profiles = await this.profileModel.find({ divisi: divisi.nama });
-    
+
         if (!profiles || profiles.length === 0) {
             throw new NotFoundException(`Tidak ada profil dengan divisi ID ${divisiId}`);
         }
-    
+
         return profiles;
     }
 
     async getdivisibyid(id: string): Promise<IDivisi> {
-        
+
         const divisi = await this.divisiModel.findById({ id }).exec();
         return divisi;
     }
 
     async getProfilesCountByDivisiId(divisiId: string): Promise<number> {
         const divisi = await this.divisiModel.findById(divisiId);
-    
+
         if (!divisi) {
             throw new NotFoundException(`Tidak ada divisi dengan ID ${divisiId}`);
         }
-    
+
         const count = await this.profileModel.countDocuments({ divisi: divisi.nama });
-    
+
         return count;
     }
-    
-    
-    
-    
+
+
+
+
 
 
 }

@@ -1,5 +1,5 @@
-import {Document} from 'mongoose'
-export interface ITask extends Document{
+import { Document } from 'mongoose'
+export interface ITask extends Document {
     nama: string;
     deskripsi: string;
     readonly file: string;

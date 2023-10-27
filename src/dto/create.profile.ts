@@ -1,13 +1,13 @@
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
 
-export class CreateProfileDto{
-    
+export class CreateProfileDto {
+
     @IsString()
     readonly id_user: string;
 
     @IsString()
     @IsNotEmpty()
-    @IsEmail({}, {message: "Please enter correct email"})
+    @IsEmail({}, { message: "Please enter correct email" })
     readonly email: string;
 
 

@@ -1,19 +1,19 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
-export class SignUpDto{
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
-    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
+export class SignUpDto {
+    @IsNotEmpty()
+    @IsString()
     readonly name: string;
 
 
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
-    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
-    @MinLength(6)//Untuk mengatur minimal length value
-    readonly password:string;
+    @IsNotEmpty()
+    @IsString()
+    @MinLength(6)
+    readonly password: string;
 
     @IsString()
-    readonly confirmPassword:string;
+    readonly confirmPassword: string;
 
-    
-    readonly role:string;
+
+    readonly role: string;
 }

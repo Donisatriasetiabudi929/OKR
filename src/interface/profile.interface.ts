@@ -1,5 +1,5 @@
-import {Document} from 'mongoose'
-export interface IProfile extends Document{
+import { Document } from 'mongoose'
+export interface IProfile extends Document {
     readonly id_user: string;
     readonly email: string;
     nama: string;

@@ -19,7 +19,6 @@ import { ConfigService } from '@nestjs/config';
 export class AuthService {
     private readonly Redisclient: Redis;
     private minioClient: Minio.Client;
-    //Untuk menyuntikkan model pengguna serta layanan JWT
     constructor(private configService: ConfigService,
         @InjectModel(User.name)
         private userModel: Model<User>,
@@ -101,11 +100,8 @@ export class AuthService {
     }
 
 
-
-    //Untuk melakukan proses signup
     async signUp(signUpDto: SignUpDto): Promise<{ token: string }> {
         const { name, password, confirmPassword } = signUpDto;
-        // Periksa apakah password dan konfirmasi password cocok
         if (password !== confirmPassword) {
             throw new BadRequestException('Password dan konfirmasi password tidak cocok');
         }
@@ -145,79 +141,67 @@ export class AuthService {
 
     async updateUserById(userId: string, updateData: UpdateUserDto): Promise<IUser> {
         const { name, password, role } = updateData;
-        const updateFields: any = {}; // Objek untuk menyimpan bidang yang akan diperbarui
-    
+        const updateFields: any = {};
+
         if (name) {
             updateFields.name = name;
         }
-    
+
         if (role) {
             updateFields.role = role;
         }
-    
+
         if (password) {
             if (password.length < 6) {
                 const errorMessage = 'Perbarui gagal, password minimal 6 karakter';
                 console.error(errorMessage);
                 throw new BadRequestException(errorMessage);
             }
-    
+
             const hashedPassword = await bcrypt.hash(password, 10);
             updateFields.password = hashedPassword;
         }
-    
+
         const existingUser = await this.userModel.findByIdAndUpdate(userId, updateFields, { new: true });
         if (!existingUser) {
             throw new NotFoundException(`User dengan ID #${userId} tidak ditemukan`);
         }
-    
+
         await this.deleteCache(`005`);
         return existingUser;
     }
-    
+
 
 
 
     //Untuk proses login
     async login(loginDto: LoginDto): Promise<{ token: string }> {
-        //Yang di input
         const { name, password } = loginDto;
-
-        //untuk mencari user berdasarkan email
         const user = await this.userModel.findOne({ name });
-        //Jika tidak ada data user yang sesuai
         if (!user) {
             throw new UnauthorizedException('Invalid email or password');
         }
-
-        //Untuk melakukan compare / mencocokkan antara password dengan hasil hash yang ada di database
         const isPasswordMatched = await bcrypt.compare(password, user.password);
-        //Jika password tidak match
         if (!isPasswordMatched) {
             throw new UnauthorizedException('Invalid email or password');
         }
-
-        //Untuk menghasilkan token perID
         const token = this.jwtService.sign({ id: user._id });
-        //Untuk menampilkan token
         return { token };
     }
 
     async deleteUser(userId: string): Promise<IUser> {
         const deletedUser = await this.userModel.findByIdAndDelete(userId);
-    
+
         if (!deletedUser) {
             throw new NotFoundException(`Data uploud dengan ID ${userId} tidak tersedia!`);
         }
-    
-        // Hapus juga profil berdasarkan id_user
         const deletedprofile = await this.profileModel.findOneAndDelete({ id_user: userId });
         if (deletedprofile) {
             await this.deleteFile('okr.profile', deletedprofile.foto);
         }
         else {
             await this.deleteCache(`005`);
-            throw new HttpException('Berhasil menghapus data account', HttpStatus.OK); // Tambahkan pesan berhasil di sini
+            throw new HttpException('Berhasil menghapus data account', HttpStatus.OK);
         }
 
         await this.deleteCache(`005`);

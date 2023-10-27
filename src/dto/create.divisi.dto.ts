@@ -1,8 +1,8 @@
 import { IsNotEmpty, IsString } from "class-validator";
 
-export class CreateDivisiDto{
+export class CreateDivisiDto {
     @IsString()
-    @IsNotEmpty()//Untuk mengecek bahwa jangan sampai field nya tidak terisi
+    @IsNotEmpty()
     readonly nama: string;
 
 

@@ -1,5 +1,5 @@
-import {Document} from 'mongoose'
-export interface IProgrestask extends Document{
+import { Document } from 'mongoose'
+export interface IProgrestask extends Document {
     readonly id_task: string;
     readonly id_profile: string;
     readonly nama_profile: string;

@@ -48,12 +48,12 @@ export class ObjektifService {
         }
 
         const projek = await this.projekModel.findById(id_projek);
-        if(!projek){
+        if (!projek) {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
         if (projek.status === "Selesai") {
-            projek.status = "Progres"; 
-            await projek.save(); 
+            projek.status = "Progres";
+            await projek.save();
         }
 
         const newObjektif = new this.objektifModel({
@@ -76,26 +76,26 @@ export class ObjektifService {
     async updateObjektif(objektifId: string, createObjektifDto: CreateObjektifDto): Promise<IObjektif> {
         const { nama, ...rest } = createObjektifDto;
         const updateFields: any = { ...rest };
-    
+
         if (nama) {
             updateFields.nama = nama.replace(/\b\w/g, (char) => char.toUpperCase());
         }
-    
+
         const existingObjektif = await this.objektifModel.findByIdAndUpdate(objektifId, updateFields, { new: true });
-    
+
         if (!existingObjektif) {
             throw new NotFoundException(`Siswa #${objektifId} tidak tersedia!`);
         }
-    
+
         await this.deleteCache(`003`);
         await this.deleteCache(`002`);
         await this.deleteCache(`002:${existingObjektif.id_projek}`);
         await this.deleteCache(`003:${existingObjektif.id}`);
         await this.deleteCache(`003:projek:${existingObjektif.id_projek}`);
-    
+
         return existingObjektif;
     }
-    
+
 
     async getAllObjek(): Promise<IObjektif[]> {
         const cachedData = await this.Redisclient.get('003');
@@ -116,7 +116,6 @@ export class ObjektifService {
         const cacheKey = `003:${objekId}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const existingObjek = await this.objektifModel.findById(objekId)
@@ -132,7 +131,6 @@ export class ObjektifService {
         const cacheKey = `003:projek:${idProjek}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const objektif = await this.objektifModel.find({ id_projek: idProjek });
@@ -150,7 +148,6 @@ export class ObjektifService {
             if (!uploudData || uploudData.length === 0) {
                 throw new NotFoundException('Data uploud tidak ada!');
             }
-            // Simpan data dari database ke cache dan atur waktu kedaluwarsa
             await this.Redisclient.setex('003', 3600, JSON.stringify(uploudData)); // 3600 detik = 1 jam
             console.log('Cache Redis (key 003) telah diperbarui dengan data terbaru dari MongoDB');
         } catch (error) {
@@ -181,54 +178,49 @@ export class ObjektifService {
     async deleteObjektif(objekId: string): Promise<void> {
         const deletedObjek = await this.objektifModel.findByIdAndDelete(objekId);
         console.log(deletedObjek);
-        
-    
+
+
         if (!deletedObjek) {
             throw new NotFoundException(`Objektif dengan ID ${objekId} tidak tersedia!`);
         }
-    
+
         const deletedKeyresults = await this.keyresultModel.find({ id_objek: objekId });
         console.log(deletedKeyresults);
-        
-    
+
+
         for (const deletedKeyresult of deletedKeyresults) {
             const deleteprogres = await this.progresModel.find({ id_keyresult: deletedKeyresult.id });
             console.log(deleteprogres);
-            
-    
+
+
             for (const progres of deleteprogres) {
                 if (progres.file) {
                     await this.deleteFile('okr.progres', progres.file);
                 }
             }
-    
-            // Menghapus keyresult berdasarkan id_objek
+
             await this.keyresultModel.deleteMany({ id_objek: objekId });
-    
-            // Menghapus progres berdasarkan id_keyresult
+
             await this.progresModel.deleteMany({ id_keyresult: deletedKeyresult.id });
-    
-            // Hapus file jika ada
+
             if (deletedKeyresult.file) {
                 await this.deleteFile('okr.keyresult', deletedKeyresult.file);
             }
         }
-    
-        // Memeriksa apakah total current_value mencapai target_value
+
         const projek = deletedObjek.id_projek;
         const keyresults = await this.keyresultModel.find({ id_projek: projek });
         let totalCurrentValue = 0;
         let totalTargetValue = 0;
-    
+
         keyresults.forEach(keyresult => {
             totalCurrentValue += keyresult.current_value;
             totalTargetValue += parseInt(keyresult.target_value);
         });
 
         const kondisi = totalCurrentValue >= totalTargetValue;
-    
+
         if (kondisi) {
-            // Jika totalCurrentValue >= totalTargetValue, ubah status objektif dan projek menjadi "Finish"
             const idprojek = deletedObjek.id_projek;
             const projek = await this.projekModel.findById(idprojek);
             if (projek) {
@@ -244,8 +236,8 @@ export class ObjektifService {
             }
         }
         console.log(kondisi);
-        
-    
+
+
         await this.deleteCache(`004`);
         await this.deleteCache(`002`);
         await this.deleteCache(`003`);
@@ -271,10 +263,10 @@ export class ObjektifService {
         const count = await this.objektifModel.countDocuments({ id_projek: idProjek, status: "Selesai" });
         return count;
     }
-    
-    
-    
-    
-    
+
+
+
+
+
 
 }

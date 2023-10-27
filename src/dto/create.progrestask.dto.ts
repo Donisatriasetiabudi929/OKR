@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class CreateProgresTaskDto{
+export class CreateProgresTaskDto {
 
     @IsString()
     @IsNotEmpty()

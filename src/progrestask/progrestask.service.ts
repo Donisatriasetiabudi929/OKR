@@ -83,13 +83,9 @@ export class ProgrestaskService {
     }
 
     generateRandomCode(length: number = 10): string {
-        //Variable untuk value random
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        //Variable untuk melakukan looping
         let code = '';
-        //Proses looping 
         for (let i = 0; i < length; i++) {
-            //untuk menghasilkan index secara acak
             const randomIndex = Math.floor(Math.random() * characters.length);
             code += characters.charAt(randomIndex);
         }
@@ -120,7 +116,7 @@ export class ProgrestaskService {
             foto_profile,
             tanggal,
             note: note1,
-            files: namaFiles, // Memastikan files disimpan sebagai array
+            files: namaFiles,
             link,
             status: "Pending"
         });
@@ -128,7 +124,7 @@ export class ProgrestaskService {
         if (!task) {
             throw new NotFoundException(`Task dengan ID ${newUploud.id_task} tidak ditemukan!`);
         }
-        task.status = "Pending"; // Mengubah status objek menjadi "Finish"
+        task.status = "Pending";
         await task.save();
         await this.deleteCache(`110:pending`);
         await this.deleteCache(`120`);
@@ -138,7 +134,7 @@ export class ProgrestaskService {
         return newUploud.save();
     }
 
-    
+
 
     async getProfileByIdAuth(id_user: string): Promise<IProfile> {
         return this.profileModel.findOne({ id_user }).exec();
@@ -167,11 +163,11 @@ export class ProgrestaskService {
             },
             { new: true }
         );
-    
+
         if (!updatedProgrestask) {
             throw new NotFoundException(`Data Progres task dengan ID ${progrestaskId} tidak tersedia!`);
         }
-    
+
         await this.deleteCache(`120`);
         await this.deleteCache(`120:pending`);
         await this.deleteCache(`110:pending`);
@@ -211,12 +207,12 @@ export class ProgrestaskService {
     }
 
     async getAllpendingProgrestaskTask(): Promise<IProgrestask[]> {
-        const cacheKey = '120:pending'; // Cache key baru untuk data pending
+        const cacheKey = '120:pending';
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
             return JSON.parse(cachedData);
         } else {
-            const pendingProgrestask = await this.progrestaskModel.find({ status: 'Pending' }); // Filter berdasarkan status
+            const pendingProgrestask = await this.progrestaskModel.find({ status: 'Pending' });
             if (!pendingProgrestask || pendingProgrestask.length === 0) {
                 throw new NotFoundException('Tidak ada data Progres task dengan status \'Pending\' ditemukan');
             }
@@ -229,7 +225,6 @@ export class ProgrestaskService {
         const cacheKey = `120:task:${idTask}`;
         const cachedData = await this.Redisclient.get(cacheKey);
         if (cachedData) {
-            // Jika data tersedia di cache, parse data JSON dan kembalikan
             return JSON.parse(cachedData);
         } else {
             const tasks = await this.progrestaskModel.find({ id_task: idTask });
@@ -240,9 +235,9 @@ export class ProgrestaskService {
             return tasks;
         }
     }
-    async getProgresTask(progrestaskId:string):Promise<IProgrestask>{
+    async getProgresTask(progrestaskId: string): Promise<IProgrestask> {
         const existingprogrestask = await this.progrestaskModel.findById(progrestaskId)
-        if (!existingprogrestask){
+        if (!existingprogrestask) {
             throw new NotFoundException(`Progres task dengan #${progrestaskId} tidak tersedia`);
         }
         return existingprogrestask;

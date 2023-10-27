@@ -15,10 +15,10 @@ import { IProgres } from 'src/interface/progres.interface';
 @Controller('progres')
 export class ProgresController {
     constructor(
-        private readonly progresService: ProgresService, 
+        private readonly progresService: ProgresService,
         private readonly authService: AuthService,
-        private readonly progresGateway: ProgresGateway, // Tambahkan ProgresGateway
-        ) { }
+        private readonly progresGateway: ProgresGateway,
+    ) { }
 
 
     @Post()
@@ -33,7 +33,7 @@ export class ProgresController {
             if (!token) {
                 return { message: 'Tidak ada token yang diberikan' };
             }
-            let file = '#'; // Default value
+            let file = '#';
 
             if (uploadedFile) {
                 const uniqueCode = randomBytes(10).toString('hex');
@@ -56,6 +56,7 @@ export class ProgresController {
                 deskripsi,
                 total,
                 link,
+                approve_time,
                 status
             } = createProgresDto;
 
@@ -112,10 +113,11 @@ export class ProgresController {
                     total,
                     file,
                     link,
+                    approve_time,
                     status,
                 });
-                
-                
+
+
                 return { message: 'Data berhasil dikirim', newProgres };
             }
         } catch (error) {
@@ -155,23 +157,23 @@ export class ProgresController {
         try {
             const updatedProgres = await this.progresService.approveProgres(id_progres);
             const notif = await this.progresGateway.onNewMessage(updatedProgres);
-                const socket = io('http://localhost:3050'); // Ganti dengan URL dan port server Socket.io Anda
-                socket.on('progresAdded', (updatedProgres) => {
+            const socket = io('http://localhost:3050');
+            socket.on('progresAdded', (updatedProgres) => {
                 console.log('Progres Baru Ditambahkan:', updatedProgres);
-                });
-                console.log(notif);
+            });
+            console.log(notif);
 
-            return { message: 'Progres berhasil diapprove', updatedProgres };
+            return { message: 'Progres berhasil diapprove', updatedProgres: { ...updatedProgres.toObject(), approve_time: updatedProgres.approve_time } };
         } catch (error) {
             console.error(`Error saat mengapprove progres: ${error}`);
             throw new Error('Terjadi kesalahan saat mengapprove progres');
         }
     }
     @Get('/getStoredNotifications/:idProfile')
-async getStoredNotifications(@Param('idProfile') idProfile: string) {
-    const notifications = await this.progresGateway.getStoredNotifications(idProfile);
-    return notifications;
-}
+    async getStoredNotifications(@Param('idProfile') idProfile: string) {
+        const notifications = await this.progresGateway.getStoredNotifications(idProfile);
+        return notifications;
+    }
 
 
 

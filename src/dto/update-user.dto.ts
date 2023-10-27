@@ -5,14 +5,14 @@ import { User } from "src/schema/user.schema";
 
 export class UpdateUserDto {
 
-    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
-    readonly name:string;
+    @IsString()
+    readonly name: string;
 
-    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
-    @MinLength(6)//Untuk mengatur minimal length value
-    readonly password:string;
+    @IsString()
+    @MinLength(6)
+    readonly password: string;
 
-    @IsString()//Untuk memberitahu bahwa data yang diinput bertype string
-    readonly role:string;
+    @IsString()
+    readonly role: string;
 
 }
