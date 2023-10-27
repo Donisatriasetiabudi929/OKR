@@ -172,20 +172,25 @@ async getTaskById(taskId: string): Promise<ITask | null> {
     return this.taskModel.findById(taskId).exec();
 }
 
-async getAllTask():Promise<ITask[]>{
+async getAllTask(): Promise<ITask[]> {
     const cachedData = await this.Redisclient.get('110');
 
     if (cachedData) {
         return JSON.parse(cachedData);
     } else {
         const taskData = await this.taskModel.find()
-        if (!taskData || taskData.length == 0){
+            .sort({ start_date: -1 }) // Mengurutkan berdasarkan start_date secara menurun (dari yang terbaru)
+            .limit(10); // Ambil 10 data terbaru
+
+        if (!taskData || taskData.length === 0) {
             throw new NotFoundException('Data task tidak ada!');
         }
+
         await this.Redisclient.setex('110', 3600, JSON.stringify(taskData));
         return taskData;
     }
 }
+
 
 async getTask(taskId: string): Promise<ITask> {
     const cacheKey = `110:${taskId}`;
@@ -257,14 +262,16 @@ async getAllpendingTask(): Promise<ITask[]> {
     if (cachedData) {
         return JSON.parse(cachedData);
     } else {
-        const pendingtask = await this.taskModel.find({ status: 'Pending' }); // Filter berdasarkan status
+        const pendingtask = await this.taskModel.find({ status: 'Pending' }) // Filter berdasarkan status
+                                             .sort({ start_date: -1 }); // Menyortir berdasarkan start_date dari yang terbaru
         if (!pendingtask || pendingtask.length === 0) {
-            throw new NotFoundException('Tidak ada data  task dengan status \'Pending\' ditemukan');
+            throw new NotFoundException('Tidak ada data task dengan status \'Pending\' ditemukan');
         }
         await this.Redisclient.setex(cacheKey, 3600, JSON.stringify(pendingtask));
         return pendingtask;
     }
 }
+
 
 
 }

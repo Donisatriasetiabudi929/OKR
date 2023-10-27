@@ -41,6 +41,9 @@ export class Progres {
     link: string;
 
     @Prop()
+    
+
+    @Prop()
     status: string;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
