@@ -52,7 +52,7 @@ export class ObjektifService {
             throw new NotFoundException(`Projek dengan id ${id_projek} tidak ditemukan`);
         }
         if (projek.status === "Selesai") {
-            projek.status = "Progress"; 
+            projek.status = "Progres"; 
             await projek.save(); 
         }
 
@@ -239,7 +239,7 @@ export class ObjektifService {
             const idprojek = deletedObjek.id_projek;
             const projek = await this.projekModel.findById(idprojek);
             if (projek) {
-                projek.status = "Progress";
+                projek.status = "Progres";
                 await projek.save();
             }
         }
