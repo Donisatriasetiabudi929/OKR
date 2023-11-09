@@ -212,7 +212,9 @@ export class TaskService {
         if (cachedData) {
             return JSON.parse(cachedData);
         } else {
-            const tasks = await this.taskModel.find({ assign_to: idProfile });
+            const tasks = await this.taskModel.find({ assign_to: idProfile })
+            .sort({ start_date: -1 })
+            .limit(10);
             if (!tasks || tasks.length === 0) {
                 throw new NotFoundException(`Data task dengan assign_to #${idProfile} tidak ditemukan`);
             }
